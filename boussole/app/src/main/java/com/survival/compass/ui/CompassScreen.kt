@@ -54,7 +54,7 @@ fun CompassScreen(azimuth: Float, hasCompass: Boolean) {
             val direction = getCardinalDirection(azimuth)
             Text(
                 text = direction,
-                color = Color(0xFFE94560),
+                color = Color(0xFF4A9FFF),
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -110,7 +110,7 @@ private fun DrawScope.drawCompassRose(azimuth: Float) {
             val innerY = center.y - (radius - 5f - tickLen) * cos(rad).toFloat()
 
             val tickColor = when {
-                isCardinal -> Color(0xFFE94560)
+                isCardinal -> Color(0xFF4A9FFF)
                 isMajor -> Color(0xFF0F3460)
                 else -> Color(0xFF0F3460).copy(alpha = 0.5f)
             }
@@ -125,7 +125,7 @@ private fun DrawScope.drawCompassRose(azimuth: Float) {
 
         // Cardinal labels
         val labels = listOf(
-            Triple(0, "N", Color(0xFFE94560)),
+            Triple(0, "N", Color(0xFF4A9FFF)),
             Triple(90, "E", Color.White),
             Triple(180, "S", Color.White),
             Triple(270, "O", Color.White)
@@ -161,7 +161,7 @@ private fun DrawScope.drawCompassRose(azimuth: Float) {
             lineTo(center.x + needleWidth, center.y)
             close()
         }
-        drawPath(northPath, color = Color(0xFFE94560))
+        drawPath(northPath, color = Color(0xFF4A9FFF))
 
         // South needle (dark triangle pointing down)
         val southPath = Path().apply {
@@ -174,7 +174,7 @@ private fun DrawScope.drawCompassRose(azimuth: Float) {
     }
 
     // Center dot
-    drawCircle(color = Color(0xFFE94560), radius = 8f, center = center)
+    drawCircle(color = Color(0xFF4A9FFF), radius = 8f, center = center)
     drawCircle(color = Color(0xFF1A1A2E), radius = 4f, center = center)
 }
 

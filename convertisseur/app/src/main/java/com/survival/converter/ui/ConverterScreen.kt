@@ -16,7 +16,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -37,13 +36,13 @@ import androidx.compose.ui.unit.sp
 import com.survival.converter.ConverterLogic
 import com.survival.converter.ConversionResult
 
+val accentBlue = Color(0xFF4A9FFF)
+val bgColor = Color(0xFF1A1A2E)
+val darkNavy = Color(0xFF0F3460)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ConverterScreen() {
-    val bgColor = Color(0xFF1A1A2E)
-    val accentColor = Color(0xFFE94560)
-    val darkNavy = Color(0xFF0F3460)
-
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Longueur", "Température", "Volume", "Poids")
 
@@ -58,7 +57,7 @@ fun ConverterScreen() {
     ) {
         Text(
             text = "Convertisseur",
-            color = accentColor,
+            color = accentBlue,
             fontSize = 28.sp,
             modifier = Modifier.padding(16.dp)
         )
@@ -66,7 +65,7 @@ fun ConverterScreen() {
         TabRow(
             selectedTabIndex = selectedTab,
             containerColor = darkNavy,
-            contentColor = accentColor,
+            contentColor = accentBlue,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 8.dp)
@@ -88,12 +87,46 @@ fun ConverterScreen() {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
-            when (selectedTab) {
-                0 -> LengthConverter(inputValue, { inputValue = it }, { result = it })
-                1 -> TemperatureConverter(inputValue, { inputValue = it }, { result = it })
-                2 -> VolumeConverter(inputValue, { inputValue = it }, { result = it })
-                3 -> WeightConverter(inputValue, { inputValue = it }, { result = it })
+            val convertFn: (Double, String, String) -> Double = when (selectedTab) {
+                0 -> ConverterLogic::convertLength
+                1 -> ConverterLogic::convertTemperature
+                2 -> ConverterLogic::convertVolume
+                3 -> ConverterLogic::convertWeight
+                else -> { v, _, _ -> v }
             }
+
+            val units = when (selectedTab) {
+                0 -> listOf("km", "miles", "mètres", "yards", "pieds")
+                1 -> listOf("°C", "°F", "K")
+                2 -> listOf("litres", "gallons (US)", "ml", "fl oz")
+                3 -> listOf("kg", "lbs", "grammes", "oz")
+                else -> emptyList()
+            }
+
+            val defaults = when (selectedTab) {
+                0 -> Pair("km", "miles")
+                1 -> Pair("°C", "°F")
+                2 -> Pair("litres", "gallons (US)")
+                3 -> Pair("kg", "lbs")
+                else -> Pair("", "")
+            }
+
+            var fromUnit by remember(selectedTab) { mutableStateOf(defaults.first) }
+            var toUnit by remember(selectedTab) { mutableStateOf(defaults.second) }
+
+            ConversionUI(
+                inputValue = inputValue,
+                onInputChange = { inputValue = it },
+                fromUnit = fromUnit,
+                toUnit = toUnit,
+                units = units,
+                onFromUnitChange = { fromUnit = it },
+                onToUnitChange = { toUnit = it },
+                onConvert = { input ->
+                    val output = convertFn(input, fromUnit, toUnit)
+                    result = ConversionResult(input, fromUnit, output, toUnit)
+                }
+            )
 
             if (result != null) {
                 Text(
@@ -110,137 +143,6 @@ fun ConverterScreen() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun LengthConverter(
-    inputValue: String,
-    onInputChange: (String) -> Unit,
-    onResult: (ConversionResult) -> Unit
-) {
-    val units = listOf("km", "miles", "mètres", "yards", "pieds")
-    var fromUnit by remember { mutableStateOf("km") }
-    var toUnit by remember { mutableStateOf("miles") }
-    var fromDropdownOpen by remember { mutableStateOf(false) }
-    var toDropdownOpen by remember { mutableStateOf(false) }
-
-    ConversionUI(
-        inputValue = inputValue,
-        onInputChange = onInputChange,
-        fromUnit = fromUnit,
-        toUnit = toUnit,
-        units = units,
-        onFromUnitChange = { fromUnit = it },
-        onToUnitChange = { toUnit = it },
-        onConvert = { input ->
-            val result = when {
-                fromUnit == "km" && toUnit == "miles" -> ConverterLogic.kmToMeters(input).let { ConverterLogic.metersToMiles(it) }
-                fromUnit == "km" && toUnit == "mètres" -> ConverterLogic.kmToMeters(input)
-                fromUnit == "miles" && toUnit == "km" -> ConverterLogic.milesToMeters(input).let { ConverterLogic.metersToKm(it) }
-                fromUnit == "miles" && toUnit == "mètres" -> ConverterLogic.milesToMeters(input)
-                fromUnit == "mètres" && toUnit == "km" -> ConverterLogic.metersToKm(input)
-                fromUnit == "mètres" && toUnit == "miles" -> ConverterLogic.metersToMiles(input)
-                else -> input
-            }
-            onResult(ConversionResult(input, fromUnit, result, toUnit))
-        }
-    )
-}
-
-@Composable
-private fun TemperatureConverter(
-    inputValue: String,
-    onInputChange: (String) -> Unit,
-    onResult: (ConversionResult) -> Unit
-) {
-    val units = listOf("°C", "°F", "K")
-    var fromUnit by remember { mutableStateOf("°C") }
-    var toUnit by remember { mutableStateOf("°F") }
-
-    ConversionUI(
-        inputValue = inputValue,
-        onInputChange = onInputChange,
-        fromUnit = fromUnit,
-        toUnit = toUnit,
-        units = units,
-        onFromUnitChange = { fromUnit = it },
-        onToUnitChange = { toUnit = it },
-        onConvert = { input ->
-            val result = when {
-                fromUnit == "°C" && toUnit == "°F" -> ConverterLogic.celsiusToFahrenheit(input)
-                fromUnit == "°C" && toUnit == "K" -> ConverterLogic.celsiusToKelvin(input)
-                fromUnit == "°F" && toUnit == "°C" -> ConverterLogic.fahrenheitToCelsius(input)
-                fromUnit == "°F" && toUnit == "K" -> ConverterLogic.fahrenheitToKelvin(input)
-                fromUnit == "K" && toUnit == "°C" -> ConverterLogic.kelvinToCelsius(input)
-                fromUnit == "K" && toUnit == "°F" -> ConverterLogic.kelvinToFahrenheit(input)
-                else -> input
-            }
-            onResult(ConversionResult(input, fromUnit, result, toUnit))
-        }
-    )
-}
-
-@Composable
-private fun VolumeConverter(
-    inputValue: String,
-    onInputChange: (String) -> Unit,
-    onResult: (ConversionResult) -> Unit
-) {
-    val units = listOf("litres", "gallons (US)", "ml", "fl oz")
-    var fromUnit by remember { mutableStateOf("litres") }
-    var toUnit by remember { mutableStateOf("gallons (US)") }
-
-    ConversionUI(
-        inputValue = inputValue,
-        onInputChange = onInputChange,
-        fromUnit = fromUnit,
-        toUnit = toUnit,
-        units = units,
-        onFromUnitChange = { fromUnit = it },
-        onToUnitChange = { toUnit = it },
-        onConvert = { input ->
-            val result = when {
-                fromUnit == "litres" && toUnit == "gallons (US)" -> ConverterLogic.litersToGallonsUS(input)
-                fromUnit == "litres" && toUnit == "ml" -> ConverterLogic.litersToMilliliters(input)
-                fromUnit == "gallons (US)" && toUnit == "litres" -> ConverterLogic.gallonsUSToLiters(input)
-                fromUnit == "ml" && toUnit == "litres" -> ConverterLogic.millilitersToLiters(input)
-                else -> input
-            }
-            onResult(ConversionResult(input, fromUnit, result, toUnit))
-        }
-    )
-}
-
-@Composable
-private fun WeightConverter(
-    inputValue: String,
-    onInputChange: (String) -> Unit,
-    onResult: (ConversionResult) -> Unit
-) {
-    val units = listOf("kg", "lbs", "grammes", "oz")
-    var fromUnit by remember { mutableStateOf("kg") }
-    var toUnit by remember { mutableStateOf("lbs") }
-
-    ConversionUI(
-        inputValue = inputValue,
-        onInputChange = onInputChange,
-        fromUnit = fromUnit,
-        toUnit = toUnit,
-        units = units,
-        onFromUnitChange = { fromUnit = it },
-        onToUnitChange = { toUnit = it },
-        onConvert = { input ->
-            val result = when {
-                fromUnit == "kg" && toUnit == "lbs" -> ConverterLogic.kilogramsToPounds(input)
-                fromUnit == "kg" && toUnit == "grammes" -> ConverterLogic.kilogramsToGrams(input)
-                fromUnit == "lbs" && toUnit == "kg" -> ConverterLogic.poundsToKilograms(input)
-                fromUnit == "grammes" && toUnit == "kg" -> ConverterLogic.gramsToKilograms(input)
-                else -> input
-            }
-            onResult(ConversionResult(input, fromUnit, result, toUnit))
-        }
-    )
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
 private fun ConversionUI(
     inputValue: String,
     onInputChange: (String) -> Unit,
@@ -251,9 +153,6 @@ private fun ConversionUI(
     onToUnitChange: (String) -> Unit,
     onConvert: (Double) -> Unit
 ) {
-    val accentColor = Color(0xFFE94560)
-    val darkNavy = Color(0xFF0F3460)
-
     OutlinedTextField(
         value = inputValue,
         onValueChange = onInputChange,
@@ -290,7 +189,7 @@ private fun ConversionUI(
             val input = inputValue.toDoubleOrNull() ?: return@Button
             onConvert(input)
         },
-        colors = ButtonDefaults.buttonColors(containerColor = accentColor),
+        colors = ButtonDefaults.buttonColors(containerColor = accentBlue),
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 16.dp)
@@ -299,7 +198,6 @@ private fun ConversionUI(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun UnitDropdown(
     label: String,
@@ -313,7 +211,7 @@ private fun UnitDropdown(
     Box(modifier = modifier) {
         Button(
             onClick = { expanded = true },
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F3460)),
+            colors = ButtonDefaults.buttonColors(containerColor = darkNavy),
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("$label: $selectedUnit", color = Color.White, fontSize = 12.sp)

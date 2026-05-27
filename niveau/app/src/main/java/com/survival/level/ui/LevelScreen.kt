@@ -51,7 +51,7 @@ fun LevelScreen(tiltX: Float, tiltY: Float, hasAccelerometer: Boolean) {
             modifier = Modifier.padding(16.dp)
         ) {
             val isLevel = abs(tiltX) < 5f && abs(tiltY) < 5f
-            val statusColor = if (isLevel) Color(0xFF00D084) else Color(0xFFE94560)
+            val statusColor = if (isLevel) Color(0xFF00D084) else Color(0xFF4A9FFF)
             val statusText = if (isLevel) "NIVEAU" else "INCLINÉ"
 
             Text(
@@ -92,7 +92,7 @@ private fun DrawScope.drawLevelBubble(tiltX: Float, tiltY: Float, isLevel: Boole
 
     // Border circle
     drawCircle(
-        color = if (isLevel) Color(0xFF00D084) else Color(0xFFE94560),
+        color = if (isLevel) Color(0xFF00D084) else Color(0xFF4A9FFF),
         radius = outerRadius,
         center = center,
         style = Stroke(width = 4f)
@@ -141,7 +141,7 @@ private fun DrawScope.drawLevelBubble(tiltX: Float, tiltY: Float, isLevel: Boole
 
     // Main bubble
     drawCircle(
-        color = if (isLevel) Color(0xFF00D084) else Color(0xFFE94560),
+        color = if (isLevel) Color(0xFF00D084) else Color(0xFF4A9FFF),
         radius = bubbleRadius,
         center = bubbleCenter
     )
@@ -164,7 +164,7 @@ private fun DrawScope.drawLevelBubble(tiltX: Float, tiltY: Float, isLevel: Boole
         val innerY = center.y - (outerRadius - 10f - tickLen) * cos(rad).toFloat()
 
         drawLine(
-            color = if (isMajor) Color(0xFFE94560) else Color(0xFF0F3460),
+            color = if (isMajor) Color(0xFF4A9FFF) else Color(0xFF0F3460),
             start = Offset(innerX, innerY),
             end = Offset(outerX, outerY),
             strokeWidth = if (isMajor) 2f else 1f

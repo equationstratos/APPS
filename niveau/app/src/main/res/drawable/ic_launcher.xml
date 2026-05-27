@@ -4,13 +4,13 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Background -->
+    <!-- Background noir -->
     <path
-        android:fillColor="#1A1A2E"
-        android:pathData="M54,54m-40,0a40,40 0,1 1,80 0a40,40 0,1 1,-80 0" />
+        android:fillColor="#000000"
+        android:pathData="M0,0h108v108H0z" />
     <!-- Level circle -->
     <path
-        android:fillColor="#E94560"
+        android:fillColor="#4A9FFF"
         android:pathData="M54,54m-30,0a30,30 0,1 1,60 0a30,30 0,1 1,-60 0" />
     <!-- Bubble -->
     <path
