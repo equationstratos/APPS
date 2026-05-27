@@ -72,7 +72,7 @@ fun LoupeApp(owner: ComponentActivity) {
             }
         }, Modifier.fillMaxSize())
 
-        Column(Modifier.fillMaxWidth().align(Alignment.BottomCenter).background(bg.copy(alpha = 0.8f)).padding(16.dp)) {
+        Column(Modifier.fillMaxWidth().align(Alignment.BottomCenter).background(bg.copy(alpha = 0.8f)).padding(horizontal = 16.dp, vertical = 32.dp)) {
             Text("Zoom: ${"%.1f".format(1f + zoom * 9f)}x", color = accent, fontSize = 14.sp, fontWeight = FontWeight.Bold)
             Slider(value = zoom, onValueChange = { zoom = it; cam?.cameraControl?.setLinearZoom(it) },
                 colors = SliderDefaults.colors(thumbColor = accent, activeTrackColor = accent, inactiveTrackColor = navy))

@@ -97,12 +97,9 @@ fun ChronoApp() {
                         Btn(label, true, accent, navy, bg) {
                             timerTarget = secs.toLong() * 1000L
                             timerRemaining = secs.toLong() * 1000L
+                            timerRunning = true
                         }
                     }
-                }
-                Spacer(Modifier.height(16.dp))
-                if (timerRemaining > 0L) {
-                    Btn("Démarrer", true, accent, navy, bg) { timerRunning = true }
                 }
             } else {
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {

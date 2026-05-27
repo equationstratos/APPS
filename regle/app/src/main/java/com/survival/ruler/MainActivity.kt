@@ -1,7 +1,6 @@
 package com.survival.ruler
 
 import android.os.Bundle
-import android.util.DisplayMetrics
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -9,7 +8,9 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -19,6 +20,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 class MainActivity : ComponentActivity() {
@@ -37,37 +39,21 @@ class MainActivity : ComponentActivity() {
 fun RulerApp() {
     val context = LocalContext.current
 
-    // Get screen DPI
-    val displayMetrics = DisplayMetrics()
-    val windowManager = (context as? android.app.Activity)?.windowManager
-    windowManager?.defaultDisplay?.getMetrics(displayMetrics)
-    val screenDpi = displayMetrics.densityDpi.toFloat()
-
-    // Get screen dimensions in pixels
-    val screenHeightPx = displayMetrics.heightPixels.toFloat()
-
-    // Calculate pixels per unit
-    val pxPerCm = (1f / 2.54f) * (screenDpi / 160f)  // cm to pixels
-    val pxPerInch = screenDpi / 160f                  // inches to pixels
+    val displayMetrics = context.resources.displayMetrics
+    val dpi = displayMetrics.ydpi
+    val pxPerCm = dpi / 2.54f
+    val pxPerInch = dpi
 
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .fillMaxHeight()
-            .background(Color(0xFF1A1A2E))
+        modifier = Modifier.fillMaxSize().background(Color(0xFF1A1A2E))
     ) {
-        // Left ruler (Centimeters)
         CentimeterRulerView(
             pxPerCm = pxPerCm,
-            screenHeightPx = screenHeightPx,
-            modifier = Modifier.align(Alignment.CenterStart)
+            modifier = Modifier.align(Alignment.CenterStart).width(80.dp).fillMaxHeight()
         )
-
-        // Right ruler (Inches)
         InchRulerView(
             pxPerInch = pxPerInch,
-            screenHeightPx = screenHeightPx,
-            modifier = Modifier.align(Alignment.CenterEnd)
+            modifier = Modifier.align(Alignment.CenterEnd).width(80.dp).fillMaxHeight()
         )
     }
 }
@@ -75,7 +61,6 @@ fun RulerApp() {
 @Composable
 private fun CentimeterRulerView(
     pxPerCm: Float,
-    screenHeightPx: Float,
     modifier: Modifier = Modifier
 ) {
     val textMeasurer = rememberTextMeasurer()
@@ -138,7 +123,6 @@ private fun CentimeterRulerView(
 @Composable
 private fun InchRulerView(
     pxPerInch: Float,
-    screenHeightPx: Float,
     modifier: Modifier = Modifier
 ) {
     val textMeasurer = rememberTextMeasurer()

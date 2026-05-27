@@ -126,6 +126,13 @@ fun TorchApp(
 
     val modeNames = listOf("Normal", "SOS", "Strobe", "Screen")
 
+    // Normal mode - direct toggle
+    LaunchedEffect(currentMode, isFlashOn) {
+        if (currentMode == 0) {
+            onToggleFlash(isFlashOn)
+        }
+    }
+
     // SOS pattern: ... --- ...
     LaunchedEffect(currentMode, isFlashOn) {
         if (currentMode == 1 && isFlashOn) {
