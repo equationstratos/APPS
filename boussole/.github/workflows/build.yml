@@ -38,6 +38,13 @@ jobs:
           export ANDROID_SDK_ROOT=$ANDROID_HOME
           ./gradlew assembleRelease -x lint --stacktrace
 
+      - name: Debug - List build outputs
+        if: always()
+        run: |
+          echo "=== Build outputs ==="
+          find boussole/app/build -type f -name "*.apk" 2>/dev/null || echo "No APK files found"
+          ls -la boussole/app/build/outputs/ 2>/dev/null || echo "No outputs dir"
+
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         if: always()
