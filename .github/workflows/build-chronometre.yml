@@ -7,6 +7,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: apk-commit
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -32,14 +36,18 @@ jobs:
         working-directory: chronometre
         run: ./gradlew assembleDebug --stacktrace
 
-      - name: Copy APK to repo
+      - name: Commit and push APK
         run: |
           mkdir -p apk
           cp chronometre/app/build/outputs/apk/debug/*.apk apk/chronometre.apk
-
-      - name: Commit and push APK
-        run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add apk/chronometre.apk
-          git diff --cached --quiet && echo "No changes" || (git commit -m "build: update chronometre.apk" && git push)
+          git add -f apk/chronometre.apk
+          git diff --cached --quiet && echo "No changes" || {
+            git commit -m "build: update chronometre.apk"
+            for i in 1 2 3 4 5; do
+              git pull --rebase origin ${{ github.ref_name }} && git push && break
+              echo "Retry $i..."
+              sleep $((i * 5))
+            done
+          }
