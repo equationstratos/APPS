@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Miroir</string>
+    <string name="freeze_button">Freeze</string>
+    <string name="unfreeze_button">Unfreeze</string>
+    <string name="toggle_mirror">Toggle Mirror</string>
+    <string name="brightness">Brightness</string>
+    <string name="camera_permission_denied">Camera permission denied</string>
+    <string name="request_permission">Request Permission</string>
+</resources>
