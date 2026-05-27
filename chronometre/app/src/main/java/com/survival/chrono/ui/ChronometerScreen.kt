@@ -1,6 +1,5 @@
 package com.survival.chrono.ui
 
-import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -26,7 +25,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlin.math.floor
 
 @Composable
 fun ChronometerScreen(
@@ -44,8 +42,7 @@ fun ChronometerScreen(
     onTimerStart: () -> Unit,
     onTimerPause: () -> Unit,
     onTimerReset: () -> Unit,
-    onTimerDurationChanged: (Long) -> Unit,
-    context: Context
+    onTimerDurationChanged: (Long) -> Unit
 ) {
     val bgColor = Color(0xFF1A1A2E)
     val accentColor = Color(0xFF4A9FFF)
