@@ -28,15 +28,20 @@ jobs:
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses 2>/dev/null || true
           $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-35" "build-tools;35.0.0" "cmdline-tools;latest" 2>&1 | grep -v "Warning"
 
+      - name: Build App
+        run: |
+          export ANDROID_SDK_ROOT=$ANDROID_HOME
+          ./gradlew build --stacktrace 2>&1 | tail -50
+
       - name: Build Debug APK
         run: |
           export ANDROID_SDK_ROOT=$ANDROID_HOME
-          ./gradlew assembleDebug -x lint --stacktrace
+          ./gradlew assembleDebug --stacktrace 2>&1 | tail -50
 
       - name: Build Release APK
         run: |
           export ANDROID_SDK_ROOT=$ANDROID_HOME
-          ./gradlew assembleRelease -x lint --stacktrace
+          ./gradlew assembleRelease --stacktrace 2>&1 | tail -50
 
       - name: Debug - List build outputs
         if: always()
