@@ -40,12 +40,16 @@ jobs:
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: convertisseur-debug
-          path: app/build/outputs/apk/debug/*.apk
+          path: convertisseur/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: warn
 
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: convertisseur-release
-          path: app/build/outputs/apk/release/*.apk
+          path: convertisseur/app/build/outputs/apk/release/*.apk
+          if-no-files-found: warn

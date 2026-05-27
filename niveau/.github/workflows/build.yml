@@ -40,12 +40,16 @@ jobs:
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: niveau-debug
-          path: app/build/outputs/apk/debug/*.apk
+          path: niveau/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: warn
 
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: niveau-release
-          path: app/build/outputs/apk/release/*.apk
+          path: niveau/app/build/outputs/apk/release/*.apk
+          if-no-files-found: warn
