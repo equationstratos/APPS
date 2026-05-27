@@ -33,3 +33,22 @@ jobs:
           name: niveau-debug-apk
           path: niveau/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
+
+      - name: Get version
+        id: version
+        run: echo "date=$(date +'%Y%m%d-%H%M')" >> $GITHUB_OUTPUT
+
+      - name: Rename APK
+        run: cp niveau/app/build/outputs/apk/debug/*.apk niveau-debug.apk
+
+      - name: Create or Update Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: niveau-latest
+          name: "Niveau - Latest Build"
+          body: "Auto-built APK for Niveau. Download and install on Android."
+          files: niveau-debug.apk
+          make_latest: false
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

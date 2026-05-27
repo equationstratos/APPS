@@ -33,3 +33,22 @@ jobs:
           name: boussole-debug-apk
           path: boussole/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
+
+      - name: Get version
+        id: version
+        run: echo "date=$(date +'%Y%m%d-%H%M')" >> $GITHUB_OUTPUT
+
+      - name: Rename APK
+        run: cp boussole/app/build/outputs/apk/debug/*.apk boussole-debug.apk
+
+      - name: Create or Update Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: boussole-latest
+          name: "Boussole - Latest Build"
+          body: "Auto-built APK for Boussole. Download and install on Android."
+          files: boussole-debug.apk
+          make_latest: false
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
