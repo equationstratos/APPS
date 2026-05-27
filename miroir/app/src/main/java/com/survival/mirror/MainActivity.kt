@@ -1,23 +1,31 @@
 package com.survival.mirror
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.mutableStateOf
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.survival.mirror.ui.MirrorScreen
-import com.survival.mirror.ui.theme.MiroirTheme
 
 class MainActivity : ComponentActivity() {
+
+    val hasPermission = mutableStateOf(false)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent {
-            MiroirTheme {
-                MirrorScreen(modifier = Modifier.fillMaxSize())
-            }
-        }
+        enableEdgeToEdge()
+        hasPermission.value = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+        if (!hasPermission.value) ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), 100)
+
+        setContent { MirrorScreen(hasPermission.value, this) }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == 100 && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) hasPermission.value = true
     }
 }

@@ -6,19 +6,19 @@ import android.os.Vibrator
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import com.survival.chrono.ui.ChronometerScreen
 
 class MainActivity : ComponentActivity() {
 
-    private val stopwatchMsState = mutableLongStateOf(0L)
-    private val timerMsState = mutableLongStateOf(0L)
-    private val isStopwatchRunningState = mutableIntStateOf(0)
-    private val isTimerRunningState = mutableIntStateOf(0)
-    private val lapTimes = mutableStateListOf<Long>()
-    private val selectedTabState = mutableIntStateOf(0)
+    val stopwatchMs = mutableLongStateOf(0L)
+    val timerMs = mutableLongStateOf(0L)
+    val isStopwatchRunning = mutableStateOf(false)
+    val isTimerRunning = mutableStateOf(false)
+    val lapTimes = mutableStateListOf<Long>()
+    val selectedTab = mutableStateOf(0)
 
     private var stopwatchThread: Thread? = null
     private var timerThread: Thread? = null
@@ -26,67 +26,66 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-
         setContent {
             ChronometerScreen(
-                stopwatchMs = stopwatchMsState.longValue,
-                timerMs = timerMsState.longValue,
-                isStopwatchRunning = isStopwatchRunningState.intValue == 1,
-                isTimerRunning = isTimerRunningState.intValue == 1,
+                stopwatchMs = stopwatchMs.longValue,
+                timerMs = timerMs.longValue,
+                isStopwatchRunning = isStopwatchRunning.value,
+                isTimerRunning = isTimerRunning.value,
                 lapTimes = lapTimes,
-                selectedTab = selectedTabState.intValue,
-                onTabChanged = { selectedTabState.intValue = it },
+                selectedTab = selectedTab.value,
+                onTabChanged = { selectedTab.value = it },
                 onStopwatchStart = { startStopwatch() },
                 onStopwatchStop = { stopStopwatch() },
                 onStopwatchReset = { resetStopwatch() },
-                onStopwatchLap = { lapTimes.add(0, stopwatchMsState.longValue) },
+                onStopwatchLap = { lapTimes.add(0, stopwatchMs.longValue) },
                 onTimerStart = { startTimer() },
                 onTimerPause = { pauseTimer() },
-                onTimerReset = { pauseTimer(); timerMsState.longValue = 0L },
-                onTimerDurationChanged = { timerMsState.longValue = it }
+                onTimerReset = { pauseTimer(); timerMs.longValue = 0L },
+                onTimerDurationChanged = { timerMs.longValue = it }
             )
         }
     }
 
     private fun startStopwatch() {
-        if (isStopwatchRunningState.intValue == 1) return
-        isStopwatchRunningState.intValue = 1
+        if (isStopwatchRunning.value) return
+        isStopwatchRunning.value = true
         stopwatchThread = Thread {
-            val startTime = System.currentTimeMillis() - stopwatchMsState.longValue
-            while (isStopwatchRunningState.intValue == 1) {
-                stopwatchMsState.longValue = System.currentTimeMillis() - startTime
+            val base = System.currentTimeMillis() - stopwatchMs.longValue
+            while (isStopwatchRunning.value) {
+                stopwatchMs.longValue = System.currentTimeMillis() - base
                 Thread.sleep(10)
             }
         }.apply { start() }
     }
 
     private fun stopStopwatch() {
-        isStopwatchRunningState.intValue = 0
-        stopwatchThread?.join(1000)
+        isStopwatchRunning.value = false
     }
 
     private fun resetStopwatch() {
         stopStopwatch()
-        stopwatchMsState.longValue = 0L
+        stopwatchMs.longValue = 0L
         lapTimes.clear()
     }
 
     private fun startTimer() {
-        if (isTimerRunningState.intValue == 1) return
-        if (timerMsState.longValue <= 0) return
-        isTimerRunningState.intValue = 1
+        if (isTimerRunning.value || timerMs.longValue <= 0) return
+        isTimerRunning.value = true
         timerThread = Thread {
-            val startTime = System.currentTimeMillis()
-            val duration = timerMsState.longValue
-            while (isTimerRunningState.intValue == 1) {
-                val elapsed = System.currentTimeMillis() - startTime
-                timerMsState.longValue = maxOf(0, duration - elapsed)
-                if (timerMsState.longValue == 0L) {
-                    isTimerRunningState.intValue = 0
-                    try {
-                        val vibrator = getSystemService(VIBRATOR_SERVICE) as Vibrator
-                        vibrator.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE))
-                    } catch (_: Exception) {}
+            val start = System.currentTimeMillis()
+            val duration = timerMs.longValue
+            while (isTimerRunning.value) {
+                val remaining = maxOf(0L, duration - (System.currentTimeMillis() - start))
+                timerMs.longValue = remaining
+                if (remaining == 0L) {
+                    isTimerRunning.value = false
+                    runOnUiThread {
+                        try {
+                            val v = getSystemService(VIBRATOR_SERVICE) as Vibrator
+                            v.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE))
+                        } catch (_: Exception) {}
+                    }
                     break
                 }
                 Thread.sleep(10)
@@ -95,13 +94,12 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun pauseTimer() {
-        isTimerRunningState.intValue = 0
-        timerThread?.join(1000)
+        isTimerRunning.value = false
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        stopStopwatch()
-        pauseTimer()
+        isStopwatchRunning.value = false
+        isTimerRunning.value = false
     }
 }

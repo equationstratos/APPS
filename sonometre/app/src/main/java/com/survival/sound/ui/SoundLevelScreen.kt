@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -30,305 +32,86 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-private val BACKGROUND_COLOR = Color(0xFF1A1A2E)
-private val ACCENT_BLUE = Color(0xFF4A9FFF)
-private val DARK_NAVY = Color(0xFF0F3460)
-private val TEXT_COLOR = Color.White
+private val BG = Color(0xFF1A1A2E)
+private val ACCENT = Color(0xFF4A9FFF)
+private val NAVY = Color(0xFF0F3460)
 
 @Composable
 fun SoundLevelScreen(
-    currentLevel: Float,
-    minLevel: Float,
-    maxLevel: Float,
-    averageLevel: Float,
-    isRecording: Boolean,
-    hasPermission: Boolean,
-    onStartRecording: () -> Unit,
-    onStopRecording: () -> Unit,
-    onReset: () -> Unit
+    currentLevel: Float, minLevel: Float, maxLevel: Float, averageLevel: Float,
+    isRecording: Boolean, hasPermission: Boolean,
+    onStartRecording: () -> Unit, onStopRecording: () -> Unit, onReset: () -> Unit
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(BACKGROUND_COLOR)
+    Column(
+        modifier = Modifier.fillMaxSize().background(BG).verticalScroll(rememberScrollState()).padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(24.dp)
-        ) {
-            Spacer(modifier = Modifier.height(16.dp))
+        Spacer(Modifier.height(16.dp))
+        Text("Sonomètre", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = ACCENT)
 
-            // Title
-            Text(
-                text = "Sonomètre",
-                fontSize = 32.sp,
-                fontWeight = FontWeight.Bold,
-                color = ACCENT_BLUE
-            )
-
-            // Current Level Display
-            LevelDisplay(currentLevel = currentLevel)
-
-            // Animated Level Bar
-            LevelBar(currentLevel = currentLevel, maxLevel = 140f)
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Stats Grid
-            StatsGrid(minLevel = minLevel, maxLevel = maxLevel, averageLevel = averageLevel)
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Reference Scale
-            ReferenceScale()
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Permission and Recording Status
-            if (!hasPermission) {
-                Text(
-                    text = "Audio permission required",
-                    color = Color(0xFFFF6B6B),
-                    fontSize = 14.sp,
-                    textAlign = TextAlign.Center
-                )
+        Box(Modifier.size(200.dp).background(NAVY, CircleShape).padding(16.dp), Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("%.1f".format(currentLevel), fontSize = 56.sp, fontWeight = FontWeight.Bold, color = ACCENT)
+                Text("dB", fontSize = 18.sp, color = Color.White)
             }
-
-            // Control Buttons
-            ControlButtons(
-                isRecording = isRecording,
-                hasPermission = hasPermission,
-                onStartRecording = onStartRecording,
-                onStopRecording = onStopRecording,
-                onReset = onReset
-            )
         }
-    }
-}
 
-@Composable
-private fun LevelDisplay(currentLevel: Float) {
-    Box(
-        modifier = Modifier
-            .size(240.dp)
-            .background(DARK_NAVY, shape = androidx.compose.foundation.shape.CircleShape)
-            .padding(16.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = String.format("%.1f", currentLevel),
-                fontSize = 72.sp,
-                fontWeight = FontWeight.Bold,
-                color = ACCENT_BLUE
-            )
-            Text(
-                text = "dB",
-                fontSize = 20.sp,
-                color = TEXT_COLOR
-            )
+        val norm = (currentLevel / 140f).coerceIn(0f, 1f)
+        val animLevel by animateFloatAsState(norm, tween(100, easing = LinearEasing), label = "level")
+        val barColor by animateColorAsState(
+            when { currentLevel < 50 -> ACCENT; currentLevel < 80 -> Color(0xFF7ED321)
+                currentLevel < 100 -> Color(0xFFFFD700); else -> Color(0xFFFF6B6B) },
+            tween(300), label = "color"
+        )
+        Box(Modifier.fillMaxWidth().height(28.dp).background(NAVY, RoundedCornerShape(14.dp)).padding(3.dp)) {
+            Box(Modifier.fillMaxWidth(animLevel).fillMaxSize().background(barColor, RoundedCornerShape(11.dp)))
         }
-    }
-}
 
-@Composable
-private fun LevelBar(currentLevel: Float, maxLevel: Float) {
-    val normalizedLevel = (currentLevel / maxLevel).coerceIn(0f, 1f)
-    val animatedLevel by animateFloatAsState(
-        targetValue = normalizedLevel,
-        animationSpec = tween(durationMillis = 100, easing = LinearEasing),
-        label = "levelAnimation"
-    )
-
-    val barColor by animateColorAsState(
-        targetValue = when {
-            currentLevel < 50 -> ACCENT_BLUE
-            currentLevel < 80 -> Color(0xFF7ED321)
-            currentLevel < 100 -> Color(0xFFFFD700)
-            else -> Color(0xFFFF6B6B)
-        },
-        animationSpec = tween(durationMillis = 300),
-        label = "colorAnimation"
-    )
-
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = "Sound Level",
-            color = TEXT_COLOR,
-            fontSize = 14.sp
-        )
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(32.dp)
-                .background(DARK_NAVY, shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
-                .padding(4.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(animatedLevel)
-                    .fillMaxSize()
-                    .background(barColor, shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
-            )
+        Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(12.dp)) {
+            StatBox("Min", if (minLevel == 0f) "-" else "%.1f".format(minLevel), Modifier.weight(1f))
+            StatBox("Max", if (maxLevel == 0f) "-" else "%.1f".format(maxLevel), Modifier.weight(1f))
+            StatBox("Moy", if (averageLevel == 0f) "-" else "%.1f".format(averageLevel), Modifier.weight(1f))
         }
-    }
-}
 
-@Composable
-private fun StatsGrid(minLevel: Float, maxLevel: Float, averageLevel: Float) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            StatBox(
-                label = "Min",
-                value = if (minLevel == 0f) "-" else String.format("%.1f", minLevel),
-                modifier = Modifier.weight(1f)
-            )
-            StatBox(
-                label = "Max",
-                value = if (maxLevel == 0f) "-" else String.format("%.1f", maxLevel),
-                modifier = Modifier.weight(1f)
-            )
+        Column(Modifier.fillMaxWidth().background(NAVY, RoundedCornerShape(12.dp)).padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text("Référence", color = ACCENT, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            Ref("Chuchotement", "~30 dB"); Ref("Conversation", "~60 dB")
+            Ref("Trafic", "~80 dB"); Ref("Concert", "~110 dB")
         }
-        StatBox(
-            label = "Average",
-            value = if (averageLevel == 0f) "-" else String.format("%.1f", averageLevel),
-            modifier = Modifier.fillMaxWidth()
-        )
-    }
-}
 
-@Composable
-private fun StatBox(label: String, value: String, modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier
-            .background(DARK_NAVY, shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
-            .padding(16.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = label,
-                color = TEXT_COLOR,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Light
-            )
-            Text(
-                text = value,
-                color = ACCENT_BLUE,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
-    }
-}
+        if (!hasPermission) Text("Permission audio requise", color = Color(0xFFFF6B6B), fontSize = 14.sp, textAlign = TextAlign.Center)
 
-@Composable
-private fun ReferenceScale() {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(DARK_NAVY, shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Text(
-            text = "Reference Scale",
-            color = ACCENT_BLUE,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Bold
-        )
-        ReferenceItem("Whisper", "~30 dB")
-        ReferenceItem("Conversation", "~60 dB")
-        ReferenceItem("Traffic", "~80 dB")
-        ReferenceItem("Concert", "~110 dB")
-    }
-}
-
-@Composable
-private fun ReferenceItem(label: String, value: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = label,
-            color = TEXT_COLOR,
-            fontSize = 12.sp
-        )
-        Text(
-            text = value,
-            color = ACCENT_BLUE,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Medium
-        )
-    }
-}
-
-@Composable
-private fun ControlButtons(
-    isRecording: Boolean,
-    hasPermission: Boolean,
-    onStartRecording: () -> Unit,
-    onStopRecording: () -> Unit,
-    onReset: () -> Unit
-) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
         if (isRecording) {
-            Button(
-                onClick = onStopRecording,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFFF6B6B)
-                )
-            ) {
-                Text("Stop Recording", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-            }
+            Button(onStopRecording, Modifier.fillMaxWidth().height(48.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF6B6B))) {
+                Text("Arrêter", fontSize = 16.sp, fontWeight = FontWeight.Bold) }
         } else {
-            Button(
-                onClick = onStartRecording,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = ACCENT_BLUE
-                ),
-                enabled = hasPermission
-            ) {
-                Text("Start Recording", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = BACKGROUND_COLOR)
-            }
+            Button(onStartRecording, Modifier.fillMaxWidth().height(48.dp), enabled = hasPermission,
+                colors = ButtonDefaults.buttonColors(containerColor = ACCENT)) {
+                Text("Démarrer", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = BG) }
         }
-        Button(
-            onClick = onReset,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = DARK_NAVY,
-                contentColor = ACCENT_BLUE
-            )
-        ) {
-            Text("Reset", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        Button(onReset, Modifier.fillMaxWidth().height(48.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = NAVY)) {
+            Text("Reset", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = ACCENT) }
+    }
+}
+
+@Composable
+private fun StatBox(label: String, value: String, modifier: Modifier) {
+    Box(modifier.background(NAVY, RoundedCornerShape(12.dp)).padding(12.dp), Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(label, color = Color.White, fontSize = 12.sp)
+            Text(value, color = ACCENT, fontSize = 18.sp, fontWeight = FontWeight.Bold)
         }
+    }
+}
+
+@Composable
+private fun Ref(label: String, value: String) {
+    Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
+        Text(label, color = Color.White, fontSize = 12.sp)
+        Text(value, color = ACCENT, fontSize = 12.sp)
     }
 }

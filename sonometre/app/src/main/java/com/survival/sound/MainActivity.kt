@@ -14,86 +14,70 @@ import com.survival.sound.ui.SoundLevelScreen
 
 class MainActivity : ComponentActivity() {
 
-    private val currentLevel = mutableFloatStateOf(0f)
-    private val minLevel = mutableFloatStateOf(0f)
-    private val maxLevel = mutableFloatStateOf(0f)
-    private val avgLevel = mutableFloatStateOf(0f)
-    private val isRecording = mutableStateOf(false)
-    private val hasPermission = mutableStateOf(false)
+    val currentDb = mutableFloatStateOf(0f)
+    val minDb = mutableFloatStateOf(0f)
+    val maxDb = mutableFloatStateOf(0f)
+    val avgDb = mutableFloatStateOf(0f)
+    val isRecording = mutableStateOf(false)
+    val hasPermission = mutableStateOf(false)
 
-    private var audioMeter: AudioLevelMeter? = null
-    private var sampleCount = 0
-    private var sumLevels = 0f
+    private var meter: AudioLevelMeter? = null
+    private var count = 0
+    private var sum = 0f
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        checkPermission()
-
-        audioMeter = AudioLevelMeter { level ->
-            currentLevel.floatValue = level
-            if (minLevel.floatValue == 0f || level < minLevel.floatValue) minLevel.floatValue = level
-            if (level > maxLevel.floatValue) maxLevel.floatValue = level
-            sampleCount++
-            sumLevels += level
-            avgLevel.floatValue = sumLevels / sampleCount
-        }
+        hasPermission.value = ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
 
         setContent {
             SoundLevelScreen(
-                currentLevel = currentLevel.floatValue,
-                minLevel = minLevel.floatValue,
-                maxLevel = maxLevel.floatValue,
-                averageLevel = avgLevel.floatValue,
+                currentLevel = currentDb.floatValue,
+                minLevel = minDb.floatValue,
+                maxLevel = maxDb.floatValue,
+                averageLevel = avgDb.floatValue,
                 isRecording = isRecording.value,
                 hasPermission = hasPermission.value,
-                onStartRecording = { startRecording() },
-                onStopRecording = { stopRecording() },
+                onStartRecording = { startRec() },
+                onStopRecording = { stopRec() },
                 onReset = { resetStats() }
             )
         }
     }
 
-    private fun checkPermission() {
-        hasPermission.value = ContextCompat.checkSelfPermission(
-            this, Manifest.permission.RECORD_AUDIO
-        ) == PackageManager.PERMISSION_GRANTED
-    }
-
-    private fun startRecording() {
+    private fun startRec() {
         if (!hasPermission.value) {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.RECORD_AUDIO), 101)
             return
         }
         resetStats()
-        audioMeter?.start()
+        meter = AudioLevelMeter { level ->
+            currentDb.floatValue = level
+            if (minDb.floatValue == 0f || level < minDb.floatValue) minDb.floatValue = level
+            if (level > maxDb.floatValue) maxDb.floatValue = level
+            count++; sum += level; avgDb.floatValue = sum / count
+        }
+        meter?.start()
         isRecording.value = true
     }
 
-    private fun stopRecording() {
-        audioMeter?.stop()
+    private fun stopRec() {
+        meter?.stop()
         isRecording.value = false
     }
 
     private fun resetStats() {
-        currentLevel.floatValue = 0f
-        minLevel.floatValue = 0f
-        maxLevel.floatValue = 0f
-        avgLevel.floatValue = 0f
-        sampleCount = 0
-        sumLevels = 0f
+        stopRec()
+        currentDb.floatValue = 0f; minDb.floatValue = 0f; maxDb.floatValue = 0f; avgDb.floatValue = 0f
+        count = 0; sum = 0f
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == 101 && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            hasPermission.value = true
-            startRecording()
+            hasPermission.value = true; startRec()
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        stopRecording()
-    }
+    override fun onDestroy() { super.onDestroy(); stopRec() }
 }

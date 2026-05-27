@@ -8,10 +8,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -26,440 +26,103 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+private val BG = Color(0xFF1A1A2E)
+private val ACCENT = Color(0xFF4A9FFF)
+private val NAVY = Color(0xFF0F3460)
+
 @Composable
 fun ChronometerScreen(
-    stopwatchMs: Long,
-    timerMs: Long,
-    isStopwatchRunning: Boolean,
-    isTimerRunning: Boolean,
-    lapTimes: List<Long>,
-    selectedTab: Int,
+    stopwatchMs: Long, timerMs: Long,
+    isStopwatchRunning: Boolean, isTimerRunning: Boolean,
+    lapTimes: List<Long>, selectedTab: Int,
     onTabChanged: (Int) -> Unit,
-    onStopwatchStart: () -> Unit,
-    onStopwatchStop: () -> Unit,
-    onStopwatchReset: () -> Unit,
-    onStopwatchLap: () -> Unit,
-    onTimerStart: () -> Unit,
-    onTimerPause: () -> Unit,
-    onTimerReset: () -> Unit,
-    onTimerDurationChanged: (Long) -> Unit
-) {
-    val bgColor = Color(0xFF1A1A2E)
-    val accentColor = Color(0xFF4A9FFF)
-    val navyColor = Color(0xFF0F3460)
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(bgColor),
-        contentAlignment = Alignment.TopCenter
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = 16.dp)
-        ) {
-            // Tab selector
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                TabButton(
-                    label = "Stopwatch",
-                    isSelected = selectedTab == 0,
-                    onClicked = { onTabChanged(0) },
-                    accentColor = accentColor,
-                    navyColor = navyColor
-                )
-                TabButton(
-                    label = "Timer",
-                    isSelected = selectedTab == 1,
-                    onClicked = { onTabChanged(1) },
-                    accentColor = accentColor,
-                    navyColor = navyColor
-                )
-            }
-
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                when (selectedTab) {
-                    0 -> StopwatchTab(
-                        stopwatchMs = stopwatchMs,
-                        isRunning = isStopwatchRunning,
-                        lapTimes = lapTimes,
-                        onStart = onStopwatchStart,
-                        onStop = onStopwatchStop,
-                        onReset = onStopwatchReset,
-                        onLap = onStopwatchLap,
-                        accentColor = accentColor,
-                        navyColor = navyColor
-                    )
-                    1 -> TimerTab(
-                        timerMs = timerMs,
-                        isRunning = isTimerRunning,
-                        onStart = onTimerStart,
-                        onPause = onTimerPause,
-                        onReset = onTimerReset,
-                        onDurationChanged = onTimerDurationChanged,
-                        accentColor = accentColor,
-                        navyColor = navyColor
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun TabButton(
-    label: String,
-    isSelected: Boolean,
-    onClicked: () -> Unit,
-    accentColor: Color,
-    navyColor: Color
-) {
-    Box(
-        modifier = Modifier
-            .clickable { onClicked() }
-            .background(
-                color = if (isSelected) accentColor else navyColor,
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
-            )
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = label,
-            color = if (isSelected) Color(0xFF1A1A2E) else Color.White,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.SemiBold
-        )
-    }
-}
-
-@Composable
-fun StopwatchTab(
-    stopwatchMs: Long,
-    isRunning: Boolean,
-    lapTimes: List<Long>,
-    onStart: () -> Unit,
-    onStop: () -> Unit,
-    onReset: () -> Unit,
-    onLap: () -> Unit,
-    accentColor: Color,
-    navyColor: Color
+    onStopwatchStart: () -> Unit, onStopwatchStop: () -> Unit,
+    onStopwatchReset: () -> Unit, onStopwatchLap: () -> Unit,
+    onTimerStart: () -> Unit, onTimerPause: () -> Unit,
+    onTimerReset: () -> Unit, onTimerDurationChanged: (Long) -> Unit
 ) {
     Column(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(24.dp)
+        modifier = Modifier.fillMaxSize().background(BG).padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Time display
-        Text(
-            text = formatTime(stopwatchMs),
-            color = accentColor,
-            fontSize = 72.sp,
-            fontWeight = FontWeight.Light
-        )
+        Text("Chronomètre", color = ACCENT, fontSize = 28.sp, fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = 16.dp))
 
-        // Controls
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            ControlButton(
-                label = if (isRunning) "Stop" else "Start",
-                onClick = if (isRunning) onStop else onStart,
-                accentColor = accentColor,
-                navyColor = navyColor
-            )
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(bottom = 24.dp)) {
+            Btn("Chrono", selectedTab == 0, { onTabChanged(0) })
+            Btn("Minuteur", selectedTab == 1, { onTabChanged(1) })
         }
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            ControlButton(
-                label = "Lap",
-                onClick = onLap,
-                accentColor = accentColor,
-                navyColor = navyColor,
-                enabled = isRunning
-            )
-            ControlButton(
-                label = "Reset",
-                onClick = onReset,
-                accentColor = accentColor,
-                navyColor = navyColor
-            )
-        }
-
-        // Lap times list
-        if (lapTimes.isNotEmpty()) {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .background(navyColor, shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
-                    .padding(8.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                items(lapTimes) { lapTime ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Lap ${lapTimes.indexOf(lapTime) + 1}",
-                            color = Color.White,
-                            fontSize = 14.sp
-                        )
-                        Text(
-                            text = formatTime(lapTime),
-                            color = accentColor,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
+        if (selectedTab == 0) {
+            Text(formatTime(stopwatchMs), color = ACCENT, fontSize = 56.sp, fontWeight = FontWeight.Light)
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(top = 24.dp)) {
+                Btn(if (isStopwatchRunning) "Stop" else "Start", true,
+                    if (isStopwatchRunning) onStopwatchStop else onStopwatchStart)
+                if (isStopwatchRunning) Btn("Tour", true, onStopwatchLap)
+                Btn("Reset", true, onStopwatchReset)
+            }
+            if (lapTimes.isNotEmpty()) {
+                LazyColumn(modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
+                    .background(NAVY, RoundedCornerShape(8.dp)).padding(8.dp)) {
+                    itemsIndexed(lapTimes) { i, t ->
+                        Row(Modifier.fillMaxWidth().padding(4.dp), Arrangement.SpaceBetween) {
+                            Text("Tour ${i + 1}", color = Color.White, fontSize = 14.sp)
+                            Text(formatTime(t), color = ACCENT, fontSize = 14.sp)
+                        }
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun TimerTab(
-    timerMs: Long,
-    isRunning: Boolean,
-    onStart: () -> Unit,
-    onPause: () -> Unit,
-    onReset: () -> Unit,
-    onDurationChanged: (Long) -> Unit,
-    accentColor: Color,
-    navyColor: Color
-) {
-    var hours by remember { mutableLongStateOf(0) }
-    var minutes by remember { mutableLongStateOf(0) }
-    var seconds by remember { mutableLongStateOf(0) }
-
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(24.dp)
-    ) {
-        // Time display
-        Text(
-            text = formatTime(timerMs),
-            color = accentColor,
-            fontSize = 72.sp,
-            fontWeight = FontWeight.Light
-        )
-
-        // Duration input (only when not running)
-        if (!isRunning && timerMs == 0L) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                DurationInput(
-                    label = "H",
-                    value = hours,
-                    onValueChanged = { hours = it },
-                    accentColor = accentColor,
-                    navyColor = navyColor
-                )
-                DurationInput(
-                    label = "M",
-                    value = minutes,
-                    onValueChanged = { minutes = it },
-                    accentColor = accentColor,
-                    navyColor = navyColor
-                )
-                DurationInput(
-                    label = "S",
-                    value = seconds,
-                    onValueChanged = { seconds = it },
-                    accentColor = accentColor,
-                    navyColor = navyColor
-                )
-            }
-        }
-
-        // Controls
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (!isRunning && timerMs == 0L) {
-                ControlButton(
-                    label = "Set",
-                    onClick = {
-                        val totalMs = (hours * 3600 + minutes * 60 + seconds) * 1000
-                        onDurationChanged(totalMs)
-                    },
-                    accentColor = accentColor,
-                    navyColor = navyColor,
-                    enabled = hours > 0 || minutes > 0 || seconds > 0
-                )
+        } else {
+            Text(formatTime(timerMs), color = ACCENT, fontSize = 56.sp, fontWeight = FontWeight.Light)
+            if (!isTimerRunning && timerMs == 0L) {
+                var h by remember { mutableLongStateOf(0L) }
+                var m by remember { mutableLongStateOf(0L) }
+                var s by remember { mutableLongStateOf(0L) }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 16.dp)) {
+                    NumPicker("H", h, { h = it })
+                    NumPicker("M", m, { m = it })
+                    NumPicker("S", s, { s = it })
+                }
+                Btn("Démarrer", h > 0 || m > 0 || s > 0, { onTimerDurationChanged((h * 3600 + m * 60 + s) * 1000); onTimerStart() },
+                    Modifier.padding(top = 16.dp))
             } else {
-                ControlButton(
-                    label = if (isRunning) "Pause" else "Start",
-                    onClick = if (isRunning) onPause else onStart,
-                    accentColor = accentColor,
-                    navyColor = navyColor
-                )
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(top = 24.dp)) {
+                    Btn(if (isTimerRunning) "Pause" else "Reprendre", true,
+                        if (isTimerRunning) onTimerPause else onTimerStart)
+                    Btn("Reset", true, onTimerReset)
+                }
             }
         }
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            ControlButton(
-                label = "Reset",
-                onClick = onReset,
-                accentColor = accentColor,
-                navyColor = navyColor
-            )
-        }
     }
 }
 
 @Composable
-fun ControlButton(
-    label: String,
-    onClick: () -> Unit,
-    accentColor: Color,
-    navyColor: Color,
-    enabled: Boolean = true
-) {
-    Box(
-        modifier = Modifier
-            .clickable(enabled = enabled) { onClick() }
-            .background(
-                color = if (enabled) accentColor else navyColor.copy(alpha = 0.5f),
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
-            )
-            .padding(horizontal = 24.dp, vertical = 12.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = label,
-            color = if (enabled) Color(0xFF1A1A2E) else Color.White.copy(alpha = 0.5f),
-            fontSize = 16.sp,
-            fontWeight = FontWeight.SemiBold
-        )
+private fun Btn(label: String, enabled: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Box(modifier.clickable(enabled) { onClick() }
+        .background(if (enabled) ACCENT else NAVY.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+        .padding(horizontal = 20.dp, vertical = 10.dp), Alignment.Center) {
+        Text(label, color = if (enabled) BG else Color.White.copy(0.5f), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
     }
 }
 
 @Composable
-fun DurationInput(
-    label: String,
-    value: Long,
-    onValueChanged: (Long) -> Unit,
-    accentColor: Color,
-    navyColor: Color
-) {
-    var textValue by remember(value) { mutableStateOf(value.toString()) }
-
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.padding(8.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .background(navyColor, shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
-                .padding(8.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = textValue.padStart(2, '0'),
-                color = accentColor,
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold
-            )
+private fun NumPicker(label: String, value: Long, onChange: (Long) -> Unit) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(Modifier.clickable { onChange((value + 1).coerceAtMost(59)) }
+            .background(ACCENT, RoundedCornerShape(4.dp)).padding(horizontal = 12.dp, vertical = 4.dp)) {
+            Text("+", color = BG, fontWeight = FontWeight.Bold)
         }
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            modifier = Modifier.padding(top = 4.dp)
-        ) {
-            SmallButton(
-                label = "+",
-                onClick = {
-                    val newValue = (value + 1).coerceAtMost(59)
-                    textValue = newValue.toString()
-                    onValueChanged(newValue)
-                },
-                accentColor = accentColor,
-                navyColor = navyColor
-            )
-            SmallButton(
-                label = "-",
-                onClick = {
-                    val newValue = (value - 1).coerceAtLeast(0)
-                    textValue = newValue.toString()
-                    onValueChanged(newValue)
-                },
-                accentColor = accentColor,
-                navyColor = navyColor
-            )
+        Text(value.toString().padStart(2, '0'), color = ACCENT, fontSize = 28.sp, fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(vertical = 4.dp))
+        Box(Modifier.clickable { onChange((value - 1).coerceAtLeast(0)) }
+            .background(ACCENT, RoundedCornerShape(4.dp)).padding(horizontal = 12.dp, vertical = 4.dp)) {
+            Text("-", color = BG, fontWeight = FontWeight.Bold)
         }
-        Text(
-            text = label,
-            color = Color.White,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.SemiBold
-        )
+        Text(label, color = Color.White, fontSize = 12.sp)
     }
 }
 
-@Composable
-fun SmallButton(
-    label: String,
-    onClick: () -> Unit,
-    accentColor: Color,
-    navyColor: Color
-) {
-    Box(
-        modifier = Modifier
-            .clickable { onClick() }
-            .background(accentColor, shape = androidx.compose.foundation.shape.RoundedCornerShape(4.dp))
-            .padding(horizontal = 8.dp, vertical = 4.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = label,
-            color = Color(0xFF1A1A2E),
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold
-        )
-    }
-}
-
-fun formatTime(ms: Long): String {
-    val totalSeconds = ms / 1000
-    val hours = totalSeconds / 3600
-    val minutes = (totalSeconds % 3600) / 60
-    val seconds = totalSeconds % 60
-    val millis = (ms % 1000) / 10
-
-    return if (hours > 0) {
-        String.format("%02d:%02d:%02d.%02d", hours, minutes, seconds, millis)
-    } else {
-        String.format("%02d:%02d.%02d", minutes, seconds, millis)
-    }
+private fun formatTime(ms: Long): String {
+    val h = ms / 3600000; val m = (ms % 3600000) / 60000; val s = (ms % 60000) / 1000; val cs = (ms % 1000) / 10
+    return if (h > 0) "%02d:%02d:%02d.%02d".format(h, m, s, cs) else "%02d:%02d.%02d".format(m, s, cs)
 }
