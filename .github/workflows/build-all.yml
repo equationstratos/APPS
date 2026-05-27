@@ -1,4 +1,4 @@
-name: Build Loupe APK
+name: Build All APKs
 
 on:
   push:
@@ -7,18 +7,16 @@ on:
 permissions:
   contents: write
 
-concurrency:
-  group: apk-commit
-  cancel-in-progress: false
-
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [boussole, niveau, convertisseur, lampe, chronometre, regle, sonometre, loupe, miroir]
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.ref }}
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -33,18 +31,46 @@ jobs:
         run: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-35" "build-tools;35.0.0"
 
       - name: Build Debug APK
-        working-directory: loupe
+        working-directory: ${{ matrix.app }}
         run: ./gradlew assembleDebug --stacktrace
 
-      - name: Commit and push APK
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.app }}-apk
+          path: ${{ matrix.app }}/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+  commit-apks:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Download all APKs
+        uses: actions/download-artifact@v4
+        with:
+          path: downloaded-apks
+
+      - name: Copy APKs to apk folder
         run: |
           mkdir -p apk
-          cp loupe/app/build/outputs/apk/debug/*.apk apk/loupe.apk
+          for dir in downloaded-apks/*-apk; do
+            app=$(basename "$dir" | sed 's/-apk$//')
+            cp "$dir"/*.apk "apk/${app}.apk"
+          done
+          ls -lh apk/
+
+      - name: Commit and push APKs
+        run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add -f apk/loupe.apk
+          git add -f apk/*.apk
           git diff --cached --quiet && echo "No changes" || {
-            git commit -m "build: update loupe.apk"
+            git commit -m "build: update APKs"
             for i in 1 2 3 4 5; do
               git pull --rebase origin ${{ github.ref_name }} && git push && break
               echo "Retry $i..."
