@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Background circle -->
+    <path
+        android:fillColor="#1A1A2E"
+        android:pathData="M54,54m-40,0a40,40 0,1 1,80 0a40,40 0,1 1,-80 0" />
+    <!-- North needle -->
+    <path
+        android:fillColor="#E94560"
+        android:pathData="M54,20L48,54L60,54Z" />
+    <!-- South needle -->
+    <path
+        android:fillColor="#0F3460"
+        android:pathData="M54,88L48,54L60,54Z" />
+    <!-- Center dot -->
+    <path
+        android:fillColor="#E94560"
+        android:pathData="M54,54m-4,0a4,4 0,1 1,8 0a4,4 0,1 1,-8 0" />
+</vector>
