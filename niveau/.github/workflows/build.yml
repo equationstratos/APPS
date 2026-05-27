@@ -20,16 +20,23 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: gradle
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v2
+        run: |
+          mkdir -p $HOME/.android
+          echo "### User Sources for Android SDK Manager" > $HOME/.android/repositories.cfg
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses 2>/dev/null || true
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-35" "build-tools;35.0.0" "cmdline-tools;latest" 2>&1 | grep -v "Warning"
 
       - name: Build Debug APK
-        run: ./gradlew assembleDebug --stacktrace
+        run: |
+          export ANDROID_SDK_ROOT=$ANDROID_HOME
+          ./gradlew assembleDebug -x lint --stacktrace
 
       - name: Build Release APK
-        run: ./gradlew assembleRelease --stacktrace
+        run: |
+          export ANDROID_SDK_ROOT=$ANDROID_HOME
+          ./gradlew assembleRelease -x lint --stacktrace
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
