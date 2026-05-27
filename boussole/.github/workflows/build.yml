@@ -1,12 +1,8 @@
-name: Build APK
+name: Build Boussole APK
 
 on:
   push:
   workflow_dispatch:
-
-defaults:
-  run:
-    working-directory: boussole
 
 jobs:
   build:
@@ -19,49 +15,24 @@ jobs:
         uses: actions/setup-java@v4
         with:
           java-version: '17'
-          distribution: 'temurin'
+          distribution: 'temuim'
 
-      - name: Setup Android SDK
-        run: |
-          mkdir -p $HOME/.android
-          echo "### User Sources for Android SDK Manager" > $HOME/.android/repositories.cfg
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses 2>/dev/null || true
-          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-35" "build-tools;35.0.0" "cmdline-tools;latest" 2>&1 | grep -v "Warning"
+      - name: Accept Android SDK licenses
+        run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1 || true
 
-      - name: Build App
-        run: |
-          export ANDROID_SDK_ROOT=$ANDROID_HOME
-          ./gradlew build --stacktrace 2>&1 | tail -50
+      - name: Install Android SDK components
+        run: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-35" "build-tools;35.0.0"
 
       - name: Build Debug APK
-        run: |
-          export ANDROID_SDK_ROOT=$ANDROID_HOME
-          ./gradlew assembleDebug --stacktrace 2>&1 | tail -50
+        working-directory: boussole
+        run: ./gradlew assembleDebug --stacktrace
 
-      - name: Build Release APK
-        run: |
-          export ANDROID_SDK_ROOT=$ANDROID_HOME
-          ./gradlew assembleRelease --stacktrace 2>&1 | tail -50
-
-      - name: Debug - List build outputs
-        if: always()
-        run: |
-          echo "=== Build outputs ==="
-          find boussole/app/build -type f -name "*.apk" 2>/dev/null || echo "No APK files found"
-          ls -la boussole/app/build/outputs/ 2>/dev/null || echo "No outputs dir"
+      - name: List APK files
+        run: find boussole/app/build -name "*.apk" -type f 2>/dev/null || echo "NO APK FOUND"
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
-        if: always()
         with:
-          name: boussole-debug
+          name: boussole-debug-apk
           path: boussole/app/build/outputs/apk/debug/*.apk
-          if-no-files-found: warn
-
-      - name: Upload Release APK
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: boussole-release
-          path: boussole/app/build/outputs/apk/release/*.apk
-          if-no-files-found: warn
+          if-no-files-found: error
