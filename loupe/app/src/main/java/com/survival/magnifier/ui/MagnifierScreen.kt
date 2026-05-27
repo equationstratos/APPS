@@ -5,10 +5,8 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
-import androidx.camera.camera2.Camera2Config
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
-import androidx.camera.core.ZoomState
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
@@ -16,7 +14,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -45,12 +42,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
-import androidx.compose.ui.text.font.FontSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
-import com.google.common.util.concurrent.ListenableFuture
 
 @Composable
 fun MagnifierScreen() {
@@ -78,7 +73,7 @@ fun MagnifierScreen() {
         }
     }
 
-    // Setup camera
+    // Setup camera provider
     LaunchedEffect(Unit) {
         if (ContextCompat.checkSelfPermission(
                 context,
@@ -94,22 +89,6 @@ fun MagnifierScreen() {
                 try {
                     val provider = cameraProviderFuture.get()
                     cameraProvider = provider
-
-                    val preview = Preview.Builder().build()
-                    val cameraSelector =
-                        CameraSelector.Builder()
-                            .requireLensFacing(CameraSelector.LENS_FACING_BACK)
-                            .build()
-
-                    val boundCamera = provider.bindToLifecycle(
-                        lifecycleOwner,
-                        cameraSelector,
-                        preview
-                    )
-                    camera = boundCamera
-
-                    // Set initial zoom
-                    boundCamera.cameraControl.setZoomRatio(zoom)
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
@@ -119,15 +98,25 @@ fun MagnifierScreen() {
     }
 
     // Update zoom when slider changes
-    LaunchedEffect(zoom, isFrozen) {
+    LaunchedEffect(zoom, isFrozen, camera) {
         if (!isFrozen && camera != null) {
-            camera!!.cameraControl.setZoomRatio(zoom)
+            try {
+                camera!!.cameraControl.setZoomRatio(zoom)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
     // Update flashlight
-    LaunchedEffect(flashEnabled) {
-        camera?.cameraControl?.enableTorch(flashEnabled)
+    LaunchedEffect(flashEnabled, camera) {
+        camera?.let {
+            try {
+                it.cameraControl.enableTorch(flashEnabled)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
     }
 
     Column(
@@ -142,7 +131,9 @@ fun MagnifierScreen() {
                 .fillMaxWidth()
                 .background(Color.Black)
         ) {
-            CameraPreview(cameraProvider, lifecycleOwner)
+            CameraPreview(cameraProvider, lifecycleOwner) { boundCamera ->
+                camera = boundCamera
+            }
 
             // Circle overlay for magnifier effect
             Box(
@@ -242,14 +233,15 @@ fun MagnifierScreen() {
 @Composable
 fun CameraPreview(
     cameraProvider: ProcessCameraProvider?,
-    lifecycleOwner: LifecycleOwner
+    lifecycleOwner: LifecycleOwner,
+    onCameraReady: (androidx.camera.core.Camera) -> Unit
 ) {
-    val previewView = remember { PreviewView(LocalContext.current) }
+    val context = LocalContext.current
+    val previewView = remember { PreviewView(context) }
 
     LaunchedEffect(cameraProvider) {
         if (cameraProvider == null) return@LaunchedEffect
 
-        val context = LocalContext.current
         if (ContextCompat.checkSelfPermission(
                 context,
                 Manifest.permission.CAMERA
@@ -267,11 +259,12 @@ fun CameraPreview(
 
         try {
             cameraProvider.unbindAll()
-            cameraProvider.bindToLifecycle(
+            val camera = cameraProvider.bindToLifecycle(
                 lifecycleOwner,
                 cameraSelector,
                 preview
             )
+            onCameraReady(camera)
         } catch (e: Exception) {
             e.printStackTrace()
         }

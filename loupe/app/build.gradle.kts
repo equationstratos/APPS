@@ -53,10 +53,11 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
 
     // CameraX dependencies
+    implementation("androidx.camera:camera-core:1.4.0")
     implementation("androidx.camera:camera-camera2:1.4.0")
     implementation("androidx.camera:camera-lifecycle:1.4.0")
     implementation("androidx.camera:camera-view:1.4.0")
 
-    // Permissions
+    // Permissions and UI
     implementation("androidx.compose.material:material-icons-extended")
 }

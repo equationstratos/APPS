@@ -1,18 +1,13 @@
 package com.survival.magnifier
 
 import android.Manifest
-import android.content.Context
 import android.content.pm.PackageManager
-import android.hardware.camera2.CameraCharacteristics
-import android.hardware.camera2.CameraManager
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.core.CameraXConfig
-import androidx.camera.core.CameraXConfig.Initializer
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import com.survival.magnifier.ui.LoupeApp
