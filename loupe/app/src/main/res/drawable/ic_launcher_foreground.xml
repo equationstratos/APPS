@@ -1,24 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="192dp"
-    android:height="192dp"
-    android:viewportWidth="192"
-    android:viewportHeight="192">
-    <!-- Black background -->
-    <path
-        android:fillColor="#000000"
-        android:pathData="M 0 0 L 192 0 L 192 192 L 0 192 Z" />
-    <!-- Magnifying glass circle -->
-    <path
-        android:fillColor="#4A9FFF"
-        android:strokeColor="#4A9FFF"
-        android:strokeWidth="6"
-        android:pathData="M 96 40 C 114.82 40 130 55.18 130 74 C 130 92.82 114.82 108 96 108 C 77.18 108 62 92.82 62 74 C 62 55.18 77.18 40 96 40 Z" />
-    <!-- Magnifying glass handle -->
-    <path
-        android:fillColor="#4A9FFF"
-        android:strokeColor="#4A9FFF"
-        android:strokeWidth="8"
-        android:strokeLineCap="round"
-        android:pathData="M 122 122 L 158 158" />
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#0F3460" android:pathData="M48,48m-20,0a20,20 0,1 1,40 0a20,20 0,1 1,-40 0" />
+    <path android:fillColor="#4A9FFF" android:pathData="M48,48m-16,0a16,16 0,1 1,32 0a16,16 0,1 1,-32 0" />
+    <path android:fillColor="#1A1A2E" android:pathData="M48,48m-12,0a12,12 0,1 1,24 0a12,12 0,1 1,-24 0" />
+    <path android:fillColor="#4A9FFF" android:pathData="M62,62L78,78L74,82L58,66Z" />
 </vector>

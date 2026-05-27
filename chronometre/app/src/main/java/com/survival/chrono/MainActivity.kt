@@ -35,56 +35,80 @@ fun ChronoApp() {
     var ms by remember { mutableLongStateOf(0L) }
     var running by remember { mutableStateOf(false) }
     var tab by remember { mutableIntStateOf(0) }
-    var timerMs by remember { mutableLongStateOf(0L) }
+    var timerTarget by remember { mutableLongStateOf(0L) }
+    var timerRemaining by remember { mutableLongStateOf(0L) }
     var timerRunning by remember { mutableStateOf(false) }
-    var timerSet by remember { mutableLongStateOf(60000L) }
 
     LaunchedEffect(running) {
+        if (!running) return@LaunchedEffect
         val start = System.currentTimeMillis() - ms
-        while (running) { ms = System.currentTimeMillis() - start; delay(16) }
-    }
-
-    LaunchedEffect(timerRunning) {
-        val start = System.currentTimeMillis()
-        val dur = timerMs
-        while (timerRunning && timerMs > 0) {
-            timerMs = maxOf(0, dur - (System.currentTimeMillis() - start))
-            if (timerMs == 0L) timerRunning = false
+        while (running) {
+            ms = System.currentTimeMillis() - start
             delay(16)
         }
     }
 
-    Column(Modifier.fillMaxSize().background(bg).padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+    LaunchedEffect(timerRunning) {
+        if (!timerRunning) return@LaunchedEffect
+        val start = System.currentTimeMillis()
+        val duration = timerRemaining
+        while (timerRunning) {
+            val elapsed = System.currentTimeMillis() - start
+            val remaining = (duration - elapsed).coerceAtLeast(0L)
+            timerRemaining = remaining
+            if (remaining <= 0L) {
+                timerRunning = false
+                break
+            }
+            delay(16)
+        }
+    }
+
+    Column(
+        Modifier.fillMaxSize().background(bg).padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
         Text("Chronomètre", color = accent, fontSize = 28.sp, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(24.dp))
 
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Btn("Chrono", tab == 0, accent, navy, bg) { tab = 0 }
             Btn("Minuteur", tab == 1, accent, navy, bg) { tab = 1 }
         }
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(40.dp))
 
         if (tab == 0) {
             Text(fmt(ms), color = accent, fontSize = 52.sp, fontWeight = FontWeight.Light)
-            Spacer(Modifier.height(24.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Spacer(Modifier.height(32.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 Btn(if (running) "Stop" else "Start", true, accent, navy, bg) { running = !running }
                 Btn("Reset", true, accent, navy, bg) { running = false; ms = 0L }
             }
         } else {
-            Text(fmt(timerMs), color = accent, fontSize = 52.sp, fontWeight = FontWeight.Light)
-            Spacer(Modifier.height(24.dp))
-            if (!timerRunning && timerMs == 0L) {
+            Text(fmt(timerRemaining), color = accent, fontSize = 52.sp, fontWeight = FontWeight.Light)
+            Spacer(Modifier.height(32.dp))
+
+            if (!timerRunning && timerRemaining == 0L) {
+                Text("Choisir durée", color = Color.White, fontSize = 16.sp)
+                Spacer(Modifier.height(12.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf(30, 60, 120, 300).forEach { s ->
-                        Btn("${s}s", true, accent, navy, bg) { timerMs = s * 1000L; timerSet = s * 1000L }
+                    listOf(Pair("30s", 30), Pair("1m", 60), Pair("2m", 120), Pair("5m", 300)).forEach { (label, secs) ->
+                        Btn(label, true, accent, navy, bg) {
+                            timerTarget = secs.toLong() * 1000L
+                            timerRemaining = secs.toLong() * 1000L
+                        }
                     }
                 }
                 Spacer(Modifier.height(16.dp))
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                if (timerMs > 0L) Btn(if (timerRunning) "Pause" else "Go", true, accent, navy, bg) { timerRunning = !timerRunning }
-                Btn("Reset", true, accent, navy, bg) { timerRunning = false; timerMs = 0L }
+                if (timerRemaining > 0L) {
+                    Btn("Démarrer", true, accent, navy, bg) { timerRunning = true }
+                }
+            } else {
+                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Btn(if (timerRunning) "Pause" else "Reprendre", true, accent, navy, bg) { timerRunning = !timerRunning }
+                    Btn("Reset", true, accent, navy, bg) { timerRunning = false; timerRemaining = 0L; timerTarget = 0L }
+                }
             }
         }
     }
@@ -92,14 +116,20 @@ fun ChronoApp() {
 
 @Composable
 fun Btn(label: String, enabled: Boolean, accent: Color, navy: Color, bg: Color, onClick: () -> Unit) {
-    Box(Modifier.clickable(enabled) { onClick() }
-        .background(if (enabled) accent else navy, RoundedCornerShape(8.dp))
-        .padding(horizontal = 16.dp, vertical = 10.dp), Alignment.Center) {
+    Box(
+        Modifier.clickable(enabled) { onClick() }
+            .background(if (enabled) accent else navy, RoundedCornerShape(8.dp))
+            .padding(horizontal = 20.dp, vertical = 12.dp),
+        Alignment.Center
+    ) {
         Text(label, color = bg, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
     }
 }
 
 fun fmt(ms: Long): String {
-    val m = (ms / 60000); val s = (ms % 60000) / 1000; val c = (ms % 1000) / 10
-    return "%02d:%02d.%02d".format(m, s, c)
+    val h = ms / 3600000
+    val m = (ms % 3600000) / 60000
+    val s = (ms % 60000) / 1000
+    val c = (ms % 1000) / 10
+    return if (h > 0) "%02d:%02d:%02d".format(h, m, s) else "%02d:%02d.%02d".format(m, s, c)
 }
