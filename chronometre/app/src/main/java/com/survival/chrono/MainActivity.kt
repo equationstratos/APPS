@@ -1,105 +1,105 @@
 package com.survival.chrono
 
 import android.os.Bundle
-import android.os.VibrationEffect
-import android.os.Vibrator
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import com.survival.chrono.ui.ChronometerScreen
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Text
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
-
-    val stopwatchMs = mutableLongStateOf(0L)
-    val timerMs = mutableLongStateOf(0L)
-    val isStopwatchRunning = mutableStateOf(false)
-    val isTimerRunning = mutableStateOf(false)
-    val lapTimes = mutableStateListOf<Long>()
-    val selectedTab = mutableStateOf(0)
-
-    private var stopwatchThread: Thread? = null
-    private var timerThread: Thread? = null
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContent {
-            ChronometerScreen(
-                stopwatchMs = stopwatchMs.longValue,
-                timerMs = timerMs.longValue,
-                isStopwatchRunning = isStopwatchRunning.value,
-                isTimerRunning = isTimerRunning.value,
-                lapTimes = lapTimes,
-                selectedTab = selectedTab.value,
-                onTabChanged = { selectedTab.value = it },
-                onStopwatchStart = { startStopwatch() },
-                onStopwatchStop = { stopStopwatch() },
-                onStopwatchReset = { resetStopwatch() },
-                onStopwatchLap = { lapTimes.add(0, stopwatchMs.longValue) },
-                onTimerStart = { startTimer() },
-                onTimerPause = { pauseTimer() },
-                onTimerReset = { pauseTimer(); timerMs.longValue = 0L },
-                onTimerDurationChanged = { timerMs.longValue = it }
-            )
+        setContent { ChronoApp() }
+    }
+}
+
+@Composable
+fun ChronoApp() {
+    val bg = Color(0xFF1A1A2E)
+    val accent = Color(0xFF4A9FFF)
+    val navy = Color(0xFF0F3460)
+
+    var ms by remember { mutableLongStateOf(0L) }
+    var running by remember { mutableStateOf(false) }
+    var tab by remember { mutableIntStateOf(0) }
+    var timerMs by remember { mutableLongStateOf(0L) }
+    var timerRunning by remember { mutableStateOf(false) }
+    var timerSet by remember { mutableLongStateOf(60000L) }
+
+    LaunchedEffect(running) {
+        val start = System.currentTimeMillis() - ms
+        while (running) { ms = System.currentTimeMillis() - start; delay(16) }
+    }
+
+    LaunchedEffect(timerRunning) {
+        val start = System.currentTimeMillis()
+        val dur = timerMs
+        while (timerRunning && timerMs > 0) {
+            timerMs = maxOf(0, dur - (System.currentTimeMillis() - start))
+            if (timerMs == 0L) timerRunning = false
+            delay(16)
         }
     }
 
-    private fun startStopwatch() {
-        if (isStopwatchRunning.value) return
-        isStopwatchRunning.value = true
-        stopwatchThread = Thread {
-            val base = System.currentTimeMillis() - stopwatchMs.longValue
-            while (isStopwatchRunning.value) {
-                stopwatchMs.longValue = System.currentTimeMillis() - base
-                Thread.sleep(10)
+    Column(Modifier.fillMaxSize().background(bg).padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Text("Chronomètre", color = accent, fontSize = 28.sp, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(16.dp))
+
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Btn("Chrono", tab == 0, accent, navy, bg) { tab = 0 }
+            Btn("Minuteur", tab == 1, accent, navy, bg) { tab = 1 }
+        }
+        Spacer(Modifier.height(32.dp))
+
+        if (tab == 0) {
+            Text(fmt(ms), color = accent, fontSize = 52.sp, fontWeight = FontWeight.Light)
+            Spacer(Modifier.height(24.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Btn(if (running) "Stop" else "Start", true, accent, navy, bg) { running = !running }
+                Btn("Reset", true, accent, navy, bg) { running = false; ms = 0L }
             }
-        }.apply { start() }
-    }
-
-    private fun stopStopwatch() {
-        isStopwatchRunning.value = false
-    }
-
-    private fun resetStopwatch() {
-        stopStopwatch()
-        stopwatchMs.longValue = 0L
-        lapTimes.clear()
-    }
-
-    private fun startTimer() {
-        if (isTimerRunning.value || timerMs.longValue <= 0) return
-        isTimerRunning.value = true
-        timerThread = Thread {
-            val start = System.currentTimeMillis()
-            val duration = timerMs.longValue
-            while (isTimerRunning.value) {
-                val remaining = maxOf(0L, duration - (System.currentTimeMillis() - start))
-                timerMs.longValue = remaining
-                if (remaining == 0L) {
-                    isTimerRunning.value = false
-                    runOnUiThread {
-                        try {
-                            val v = getSystemService(VIBRATOR_SERVICE) as Vibrator
-                            v.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE))
-                        } catch (_: Exception) {}
+        } else {
+            Text(fmt(timerMs), color = accent, fontSize = 52.sp, fontWeight = FontWeight.Light)
+            Spacer(Modifier.height(24.dp))
+            if (!timerRunning && timerMs == 0L) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(30, 60, 120, 300).forEach { s ->
+                        Btn("${s}s", true, accent, navy, bg) { timerMs = s * 1000L; timerSet = s * 1000L }
                     }
-                    break
                 }
-                Thread.sleep(10)
+                Spacer(Modifier.height(16.dp))
             }
-        }.apply { start() }
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                if (timerMs > 0L) Btn(if (timerRunning) "Pause" else "Go", true, accent, navy, bg) { timerRunning = !timerRunning }
+                Btn("Reset", true, accent, navy, bg) { timerRunning = false; timerMs = 0L }
+            }
+        }
     }
+}
 
-    private fun pauseTimer() {
-        isTimerRunning.value = false
+@Composable
+fun Btn(label: String, enabled: Boolean, accent: Color, navy: Color, bg: Color, onClick: () -> Unit) {
+    Box(Modifier.clickable(enabled) { onClick() }
+        .background(if (enabled) accent else navy, RoundedCornerShape(8.dp))
+        .padding(horizontal = 16.dp, vertical = 10.dp), Alignment.Center) {
+        Text(label, color = bg, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
     }
+}
 
-    override fun onDestroy() {
-        super.onDestroy()
-        isStopwatchRunning.value = false
-        isTimerRunning.value = false
-    }
+fun fmt(ms: Long): String {
+    val m = (ms / 60000); val s = (ms % 60000) / 1000; val c = (ms % 1000) / 10
+    return "%02d:%02d.%02d".format(m, s, c)
 }
