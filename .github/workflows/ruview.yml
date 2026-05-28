@@ -1,0 +1,105 @@
+name: ruview — tests & APKs
+
+on:
+  push:
+    paths:
+      - 'ruview/**'
+      - '.github/workflows/ruview.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  python-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install deps
+        working-directory: ruview
+        run: |
+          python -m pip install --upgrade pip
+          pip install numpy scipy pytest
+      - name: Run tests
+        working-directory: ruview
+        run: python -m pytest tests/ -v
+
+  android-build:
+    needs: python-tests
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [ruview-viewer, ruview-rtt, ruview-uwb]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Accept Android SDK licenses
+        run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1 || true
+
+      - name: Install Android SDK components
+        run: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-34" "build-tools;34.0.0"
+
+      - name: Generate Gradle wrapper
+        working-directory: ruview/android/${{ matrix.app }}
+        run: gradle wrapper --gradle-version 8.7
+
+      - name: Build Debug APK
+        working-directory: ruview/android/${{ matrix.app }}
+        run: ./gradlew assembleDebug --stacktrace --no-daemon
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.app }}-apk
+          path: ruview/android/${{ matrix.app }}/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+  commit-apks:
+    needs: android-build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Download APKs
+        uses: actions/download-artifact@v4
+        with:
+          path: downloaded-apks
+
+      - name: Copy APKs to ruview/apk/
+        run: |
+          mkdir -p ruview/apk
+          for dir in downloaded-apks/*-apk; do
+            app=$(basename "$dir" | sed 's/-apk$//')
+            cp "$dir"/*.apk "ruview/apk/${app}.apk"
+          done
+          ls -lh ruview/apk/
+
+      - name: Commit and push APKs
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add -f ruview/apk/*.apk
+          git diff --cached --quiet && echo "No changes" || {
+            git commit -m "build: update ruview APKs"
+            for i in 1 2 3 4 5; do
+              git pull --rebase origin ${{ github.ref_name }} && git push && break
+              echo "Retry $i..."
+              sleep $((i * 5))
+            done
+          }
