@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-feature android:name="android.hardware.uwb" android:required="true" />
     <uses-permission android:name="android.permission.UWB_RANGING" />
-    <application android:label="ruview UWB" android:allowBackup="false">
+    <application android:label="ruview UWB" android:allowBackup="false" android:theme="@style/Theme.Ruview">
         <activity android:name=".UwbActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

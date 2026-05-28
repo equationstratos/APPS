@@ -4,7 +4,7 @@
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <application android:label="ruview RTT" android:allowBackup="false">
+    <application android:label="ruview RTT" android:allowBackup="false" android:theme="@style/Theme.Ruview">
         <activity android:name=".RttActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
