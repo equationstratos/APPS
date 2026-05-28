@@ -2,6 +2,9 @@ name: Build All APKs
 
 on:
   push:
+    paths-ignore:
+      - 'ruview/**'
+      - '.github/workflows/ruview.yml'
   workflow_dispatch:
 
 permissions:

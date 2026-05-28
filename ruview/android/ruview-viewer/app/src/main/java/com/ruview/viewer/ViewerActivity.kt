@@ -30,7 +30,7 @@ class ViewerActivity : AppCompatActivity() {
         scope.launch { listen() }
     }
 
-    private suspend fun listen() {
+    private suspend fun listen() = coroutineScope {
         val sock = DatagramSocket(null).apply {
             reuseAddress = true
             broadcast = true
