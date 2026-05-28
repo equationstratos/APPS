@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="24dp">
+    <TextView android:id="@+id/dist"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:textSize="24sp" android:text="ranging…" />
+    <TextView android:id="@+id/motion"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginTop="16dp" android:textSize="20sp"
+        android:text="std: —" />
+</LinearLayout>
