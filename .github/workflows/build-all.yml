@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        app: [boussole, niveau, convertisseur, lampe, chronometre, regle, sonometre, loupe, miroir]
+        app: [boussole, niveau, convertisseur, lampe, chronometre, regle, sonometre, loupe, miroir, calculatrice, imc, compteur, fuseaux, metronome, batterie, rapporteur, podometre, lux, accelerometre, thermometre, vibrometre, metal, vitesse, reseau]
 
     steps:
       - uses: actions/checkout@v4
