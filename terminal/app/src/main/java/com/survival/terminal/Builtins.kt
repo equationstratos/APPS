@@ -8,7 +8,8 @@ object Builtins {
     val names = setOf(
         "cd", "pwd", "exit", "logout", "clear", "export", "unset", "env", "printenv",
         "alias", "unalias", "history", "echo", "source", ".", "which", "type", "help",
-        "true", "false", "read", "whoami", "motd", "lsb_release", "version", "man"
+        "true", "false", "read", "whoami", "motd", "lsb_release", "version", "man",
+        "compgen", "commandes"
     )
 
     suspend fun run(ctx: ExecContext): Int {
@@ -35,6 +36,7 @@ object Builtins {
             "lsb_release" -> lsbRelease(ctx)
             "version" -> { ctx.println("${Distro.NAME} ${Distro.VERSION} — shell ${Distro.SHELL_VERSION}"); 0 }
             "help" -> help(ctx)
+            "compgen", "commandes" -> compgen(ctx)
             "man" -> man(ctx)
             else -> 127
         }
@@ -181,22 +183,68 @@ object Builtins {
         return 1
     }
 
+    /**
+     * Liste ce qui est réellement exécutable : commandes internes, alias,
+     * commandes des paquets installés, et tous les programmes du PATH.
+     * Équivalent de « compgen -c » sur bash.
+     */
+    private fun compgen(ctx: ExecContext): Int {
+        val args = ctx.args
+        val onlyBuiltins = args.contains("-b")
+        val onlyAliases = args.contains("-a")
+        val all = !onlyBuiltins && !onlyAliases
+        val prefix = ctx.operands().firstOrNull() ?: ""
+        val found = java.util.TreeSet<String>()
+
+        if (onlyBuiltins || all) found.addAll(names)
+        if (onlyAliases || all) found.addAll(ctx.shell.aliases.keys)
+        if (all) {
+            Registry.commands.values
+                .filter { Apt.isInstalled(it.pkg) }
+                .forEach { found.add(it.name) }
+            Fs.bin.list()?.forEach { found.add(it) }
+            for (dir in (ctx.shell.env["PATH"] ?: "").split(':')) {
+                if (dir.isBlank()) continue
+                java.io.File(dir).list()?.forEach { found.add(it) }
+            }
+        }
+        val result = found.filter { it.startsWith(prefix) }
+        if (ctx.name == "commandes") {
+            // présentation lisible, en colonnes
+            val width = ctx.session?.cols ?: 80
+            // largeur de colonne bornée : un nom très long ne doit pas tout aplatir
+            val colw = ((result.maxOfOrNull { it.length } ?: 10) + 2).coerceIn(10, 22)
+            val cols = (width / colw).coerceAtLeast(1)
+            val sb = StringBuilder()
+            result.forEachIndexed { i, n ->
+                sb.append(n.padEnd(colw))
+                if ((i + 1) % cols == 0) { ctx.println(sb.toString().trimEnd()); sb.setLength(0) }
+            }
+            if (sb.isNotEmpty()) ctx.println(sb.toString().trimEnd())
+            ctx.println()
+            ctx.println("${Ansi.BOLD}${result.size}${Ansi.RESET} commandes disponibles.")
+        } else {
+            result.forEach { ctx.println(it) }
+        }
+        return if (result.isEmpty()) 1 else 0
+    }
+
     private fun help(ctx: ExecContext): Int {
         val a = Ansi
         ctx.println("${a.BOLD}${a.ORANGE}${Distro.PRETTY}${a.RESET} — aide")
         ctx.println()
         ctx.println("${a.BOLD}Commandes du shell${a.RESET}")
-        ctx.println("  cd, pwd, ls, cat, echo, export, alias, history, clear, exit")
-        ctx.println("  source, which, type, man, whoami, lsb_release, help")
+        ctx.println("  cd, pwd, echo, export, unset, alias, history, read, clear, exit")
+        ctx.println("  source, which, type, man, whoami, lsb_release, commandes, help")
         ctx.println()
         ctx.println("${a.BOLD}Gestion des paquets${a.RESET}")
         ctx.println("  apt update                met à jour la liste des paquets")
         ctx.println("  apt list                  affiche les paquets disponibles")
         ctx.println("  apt search <mot>          recherche un paquet")
-        ctx.println("  apt show <paquet>         details d'un paquet")
+        ctx.println("  apt show <paquet>         détails d'un paquet")
         ctx.println("  apt install <paquet>      installe un paquet")
         ctx.println("  apt remove <paquet>       désinstalle un paquet")
-        ctx.println("  dpkg -l                   paquets installes")
+        ctx.println("  dpkg -l                   paquets installés")
         ctx.println()
         ctx.println("${a.BOLD}Commandes fournies par les paquets${a.RESET}")
         val byPkg = Registry.commands.values.distinctBy { it.name }.groupBy { it.pkg }
@@ -205,10 +253,14 @@ object Builtins {
             ctx.println("  ${pkg.padEnd(18)} $mark  ${cmds.joinToString(", ") { it.name }}")
         }
         ctx.println()
-        ctx.println("${a.BOLD}Outils système réels${a.RESET}")
-        ctx.println("  Toutes les commandes de /system/bin (toybox) sont disponibles :")
+        ctx.println("${a.BOLD}Programmes du système${a.RESET}")
         ctx.println("  ls, cat, grep, sed, find, ps, top, df, du, tar, gzip, chmod, mount...")
-        ctx.println("  Les tubes, redirections et jokers sont gérés : ${a.CYAN}ps -A | grep term${a.RESET}")
+        ctx.println("  Ce ne sont pas des commandes du shell mais de vrais programmes de")
+        ctx.println("  /system/bin : c'est pourquoi ils n'apparaissent pas dans la liste")
+        ctx.println("  ci-dessus (bash fait pareil avec son propre « help »).")
+        ctx.println("  ${a.CYAN}commandes${a.RESET} affiche tout ce qui est exécutable ici,")
+        ctx.println("  ${a.CYAN}compgen -c${a.RESET} fait la même chose en une colonne.")
+        ctx.println("  Tubes, redirections et jokers sont gérés : ${a.CYAN}ps -A | grep term${a.RESET}")
         ctx.println()
         ctx.println("${a.BOLD}Raccourcis${a.RESET}")
         ctx.println("  Flèches haut/bas : historique    TAB : complétion")

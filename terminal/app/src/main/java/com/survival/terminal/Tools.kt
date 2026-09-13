@@ -31,6 +31,37 @@ object Tools {
         Registry.reg("sl", "sl", "locomotive", "sl") { sl(it) }
         Registry.reg("zip", "zip", "crée une archive ZIP", "zip archive.zip fichier...") { zip(it) }
         Registry.reg("unzip", "unzip", "extrait une archive ZIP", "unzip [-l] archive.zip [-d dossier]") { unzip(it) }
+        Registry.reg("bash", "mksh", "shell POSIX du système", "bash [-c commande] [script]") { bash(it) }
+        Registry.reg("sudo", "base-files", "exécute une commande en root (appareil rooté uniquement)",
+            "sudo commande [arguments]") { sudo(it) }
+    }
+
+    // ------------------------------------------------------------ shell et root
+
+    /** « bash » n'existe pas sur Android : le shell du système est mksh, compatible POSIX. */
+    private suspend fun bash(ctx: ExecContext): Int {
+        if (ctx.args.isEmpty()) {
+            ctx.println("Android ne fournit pas bash : le shell du système est ${Ansi.BOLD}mksh${Ansi.RESET} (compatible POSIX),")
+            ctx.println("et vous y êtes déjà. « bash -c \"commande\" » et « bash script.sh » fonctionnent.")
+            return 0
+        }
+        val rest = ctx.args.joinToString(" ") { ctx.shell.quote(it) }
+        return Exec.runExternal(ctx, "/system/bin/sh $rest")
+    }
+
+    private suspend fun sudo(ctx: ExecContext): Int {
+        val cmd = ctx.args.joinToString(" ")
+        if (cmd.isBlank()) { ctx.println("utilisation : sudo commande [arguments]"); return 2 }
+        val su = listOf("/system/bin/su", "/system/xbin/su", "/sbin/su", "/su/bin/su")
+            .map { File(it) }.firstOrNull { it.exists() }
+        if (su == null) {
+            ctx.error("sudo : commande su introuvable, cet appareil n'est pas rooté.")
+            ctx.println("Android isole chaque application : ce terminal tourne sous un compte")
+            ctx.println("sans privilèges, et votre dossier personnel est ${Fs.pretty(Fs.home)}.")
+            return 1
+        }
+        ctx.println("${Ansi.GREY}Demande d'élévation via ${su.absolutePath}...${Ansi.RESET}")
+        return Exec.runExternal(ctx, "${su.absolutePath} -c ${ctx.shell.quote(cmd)}")
     }
 
     // ---------------------------------------------------------------------- ls
