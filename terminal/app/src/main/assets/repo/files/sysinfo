@@ -1,0 +1,16 @@
+#!/system/bin/sh
+# Paquet « sysinfo » — résumé système assemblé avec les outils réels du système
+esc=$(printf '\033')
+b="${esc}[1m"; o="${esc}[38;5;208m"; r="${esc}[0m"
+
+echo "${b}${o}Résumé système${r}"
+echo "${b}Noyau     :${r} $(uname -srm 2>/dev/null)"
+echo "${b}Hôte      :${r} $(getprop ro.product.manufacturer 2>/dev/null) $(getprop ro.product.model 2>/dev/null)"
+echo "${b}Android   :${r} $(getprop ro.build.version.release 2>/dev/null) (API $(getprop ro.build.version.sdk 2>/dev/null))"
+echo "${b}Processeur:${r} $(grep -m1 'Hardware\|model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | sed 's/^ //')"
+echo "${b}Cœurs     :${r} $(grep -c ^processor /proc/cpuinfo 2>/dev/null)"
+echo "${b}Mémoire   :${r} $(grep MemTotal /proc/meminfo 2>/dev/null | awk '{print int($2/1024)" Mo"}' 2>/dev/null || grep MemTotal /proc/meminfo)"
+echo "${b}Charge    :${r} $(cat /proc/loadavg 2>/dev/null | cut -d' ' -f1-3)"
+echo "${b}Démarré   :${r} il y a $(cut -d. -f1 /proc/uptime 2>/dev/null) s"
+echo "${b}Stockage  :${r}"
+df -h "$PREFIX" 2>/dev/null | tail -n +1

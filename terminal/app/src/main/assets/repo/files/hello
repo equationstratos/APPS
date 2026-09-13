@@ -1,0 +1,10 @@
+#!/system/bin/sh
+# Paquet « hello » — exemple de script réellement installé par apt
+echo "Bonjour, le monde !"
+echo
+echo "Ce script est un vrai fichier, installé par apt dans :"
+echo "  $PREFIX/bin/hello"
+echo "Il est exécuté par le shell du système (mksh)."
+echo
+echo "Arguments reçus : $#"
+for a in "$@"; do echo "  - $a"; done

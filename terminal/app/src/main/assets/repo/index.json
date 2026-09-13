@@ -1,0 +1,389 @@
+{
+ "origin": "AndroLinux",
+ "label": "dépôt embarqué",
+ "suite": "noble-mobile",
+ "components": [
+  "main"
+ ],
+ "architecture": "all",
+ "packages": [
+  {
+   "name": "base-files",
+   "version": "13ubuntu10",
+   "section": "admin",
+   "desc": "fichiers de base du système",
+   "long": "Arborescence /etc, /usr, /var et fichiers d'identification de la distribution.",
+   "size": 71680,
+   "installed_size": 340992
+  },
+  {
+   "name": "libc6",
+   "version": "2.39-0ubuntu8",
+   "section": "libs",
+   "desc": "bibliothèque C partagée",
+   "long": "Bibliothèque C standard utilisée par l'ensemble du système.",
+   "size": 3244032,
+   "installed_size": 12582912
+  },
+  {
+   "name": "coreutils",
+   "version": "9.4-3ubuntu6",
+   "section": "utils",
+   "desc": "outils fondamentaux en ligne de commande",
+   "long": "ls, cat, cp, mv, rm, grep, sed, find, wc, head, tail...\nCes commandes sont fournies par toybox, réellement présent sur l'appareil.",
+   "size": 1441792,
+   "installed_size": 7340032
+  },
+  {
+   "name": "mksh",
+   "version": "59c-29",
+   "section": "shells",
+   "desc": "shell Korn de MirBSD",
+   "long": "Le shell POSIX du système Android. C'est lui qui exécute les tubes,\nles redirections et les jokers.",
+   "size": 241664,
+   "installed_size": 532480
+  },
+  {
+   "name": "apt",
+   "version": "2.7.14",
+   "section": "admin",
+   "desc": "gestionnaire de paquets en ligne de commande",
+   "long": "Installe, met à jour et supprime les paquets depuis les dépôts\ndéclarés dans $PREFIX/etc/apt/sources.list.",
+   "size": 1372160,
+   "installed_size": 4194304,
+   "provides": [
+    "apt",
+    "apt-get",
+    "pkg"
+   ]
+  },
+  {
+   "name": "dpkg",
+   "version": "1.22.6ubuntu6",
+   "section": "admin",
+   "desc": "gestionnaire de paquets bas niveau",
+   "long": "Consultation de la base des paquets installés.",
+   "size": 1258291,
+   "installed_size": 3145728,
+   "provides": [
+    "dpkg"
+   ]
+  },
+  {
+   "name": "libssl3",
+   "version": "3.0.13-0ubuntu3",
+   "section": "libs",
+   "desc": "bibliothèque cryptographique OpenSSL",
+   "long": "TLS 1.3, chiffrement symétrique et asymétrique, condensats.",
+   "size": 1998848,
+   "installed_size": 4718592
+  },
+  {
+   "name": "zlib1g",
+   "version": "1:1.3.dfsg-3.1",
+   "section": "libs",
+   "desc": "bibliothèque de compression",
+   "long": "Compression deflate utilisée par SSH, HTTP et les archives.",
+   "size": 67584,
+   "installed_size": 167936
+  },
+  {
+   "name": "libncurses6",
+   "version": "6.4+20240113-1",
+   "section": "libs",
+   "desc": "bibliothèque d'affichage plein écran",
+   "long": "Gestion des terminaux pour les applications en mode texte.",
+   "size": 112640,
+   "installed_size": 401408
+  },
+  {
+   "name": "openssh-client",
+   "version": "1:9.6p1-3ubuntu13",
+   "section": "net",
+   "desc": "client SSH sécurisé",
+   "long": "Connexion à une machine distante par SSH2 : shell interactif,\nexécution de commande, copie de fichiers (scp/sftp) et génération\nde clés (RSA, ECDSA, Ed25519). Les hôtes connus sont mémorisés\ndans ~/.ssh/known_hosts.",
+   "size": 892928,
+   "installed_size": 4194304,
+   "depends": [
+    "libssl3",
+    "zlib1g"
+   ],
+   "provides": [
+    "ssh",
+    "scp",
+    "sftp",
+    "ssh-keygen"
+   ]
+  },
+  {
+   "name": "curl",
+   "version": "8.5.0-2ubuntu10",
+   "section": "web",
+   "desc": "transfert de données en ligne de commande",
+   "long": "Requêtes HTTP/HTTPS avec en-têtes, méthodes, corps et suivi des\nredirections. Options -I, -X, -H, -d, -o, -L, -s.",
+   "size": 258048,
+   "installed_size": 704512,
+   "depends": [
+    "libssl3",
+    "zlib1g"
+   ],
+   "provides": [
+    "curl"
+   ]
+  },
+  {
+   "name": "wget",
+   "version": "1.21.4-1ubuntu4",
+   "section": "web",
+   "desc": "téléchargement de fichiers",
+   "long": "Récupère un fichier depuis une URL et affiche la progression.",
+   "size": 348160,
+   "installed_size": 1048576,
+   "depends": [
+    "libssl3"
+   ],
+   "provides": [
+    "wget"
+   ]
+  },
+  {
+   "name": "iputils-ping",
+   "version": "3:20240117-1",
+   "section": "net",
+   "desc": "test d'accessibilité réseau",
+   "long": "Mesure le temps d'aller-retour vers un hôte.",
+   "size": 51200,
+   "installed_size": 143360,
+   "provides": [
+    "ping"
+   ]
+  },
+  {
+   "name": "net-tools",
+   "version": "2.10-0.1ubuntu4",
+   "section": "net",
+   "desc": "outils réseau historiques",
+   "long": "ifconfig, netstat, route et hostname : interfaces, adresses IP,\nconnexions ouvertes et table de routage.",
+   "size": 204800,
+   "installed_size": 880640,
+   "provides": [
+    "ifconfig",
+    "netstat",
+    "route",
+    "hostname"
+   ]
+  },
+  {
+   "name": "dnsutils",
+   "version": "1:9.18.28-0ubuntu0",
+   "section": "net",
+   "desc": "outils d'interrogation DNS",
+   "long": "dig, nslookup et host : résolution directe et inverse.",
+   "size": 153600,
+   "installed_size": 430080,
+   "provides": [
+    "dig",
+    "nslookup",
+    "host"
+   ]
+  },
+  {
+   "name": "netcat-openbsd",
+   "version": "1.226-1ubuntu2",
+   "section": "net",
+   "desc": "couteau suisse TCP/IP",
+   "long": "Ouvre une connexion TCP brute ou se met en écoute sur un port.",
+   "size": 41984,
+   "installed_size": 110592,
+   "provides": [
+    "nc",
+    "netcat"
+   ]
+  },
+  {
+   "name": "nano",
+   "version": "7.2-2ubuntu0",
+   "section": "editors",
+   "desc": "éditeur de texte simple",
+   "long": "Édition d'un fichier texte en plein écran, avec enregistrement\npar ^O et sortie par ^X.",
+   "size": 286720,
+   "installed_size": 901120,
+   "depends": [
+    "libncurses6"
+   ],
+   "provides": [
+    "nano"
+   ]
+  },
+  {
+   "name": "htop",
+   "version": "3.3.0-4build1",
+   "section": "utils",
+   "desc": "moniteur de processus interactif",
+   "long": "Liste les processus, la mémoire et la charge lues dans /proc.",
+   "size": 184320,
+   "installed_size": 462848,
+   "depends": [
+    "libncurses6"
+   ],
+   "provides": [
+    "htop"
+   ]
+  },
+  {
+   "name": "tree",
+   "version": "2.1.1-2ubuntu3",
+   "section": "utils",
+   "desc": "affichage arborescent des répertoires",
+   "long": "Parcours récursif avec indentation, options -a, -d, -L.",
+   "size": 51200,
+   "installed_size": 131072,
+   "provides": [
+    "tree"
+   ]
+  },
+  {
+   "name": "neofetch",
+   "version": "7.1.0-4",
+   "section": "utils",
+   "desc": "informations système avec logo",
+   "long": "Affiche la distribution, le noyau, la mémoire et l'appareil,\naccompagnés du logo de la distribution.",
+   "size": 102400,
+   "installed_size": 348160,
+   "provides": [
+    "neofetch"
+   ]
+  },
+  {
+   "name": "figlet",
+   "version": "2.2.5-3",
+   "section": "utils",
+   "desc": "grandes lettres ASCII",
+   "long": "Transforme un texte en bannière composée de caractères.",
+   "size": 194560,
+   "installed_size": 706560,
+   "provides": [
+    "figlet"
+   ]
+  },
+  {
+   "name": "cowsay",
+   "version": "3.8.4-1",
+   "section": "games",
+   "desc": "une vache qui parle",
+   "long": "Affiche un message dans une bulle, dite par une vache.",
+   "size": 20480,
+   "installed_size": 81920,
+   "provides": [
+    "cowsay"
+   ]
+  },
+  {
+   "name": "fortune-mod",
+   "version": "1:9.5-2",
+   "section": "games",
+   "desc": "citations aléatoires",
+   "long": "Affiche une phrase tirée au hasard dans une base de citations.",
+   "size": 40960,
+   "installed_size": 163840,
+   "provides": [
+    "fortune"
+   ]
+  },
+  {
+   "name": "cmatrix",
+   "version": "2.0-6",
+   "section": "games",
+   "desc": "pluie de caractères verts",
+   "long": "Animation inspirée du film. Ctrl+C pour arrêter.",
+   "size": 30720,
+   "installed_size": 92160,
+   "depends": [
+    "libncurses6"
+   ],
+   "provides": [
+    "cmatrix"
+   ]
+  },
+  {
+   "name": "sl",
+   "version": "5.02-2",
+   "section": "games",
+   "desc": "locomotive à vapeur",
+   "long": "La punition classique quand on tape sl au lieu de ls.",
+   "size": 26624,
+   "installed_size": 73728,
+   "provides": [
+    "sl"
+   ]
+  },
+  {
+   "name": "zip",
+   "version": "3.0-13ubuntu2",
+   "section": "utils",
+   "desc": "création d'archives ZIP",
+   "long": "Compresse des fichiers et des dossiers au format ZIP.",
+   "size": 176128,
+   "installed_size": 540672,
+   "depends": [
+    "zlib1g"
+   ],
+   "provides": [
+    "zip"
+   ]
+  },
+  {
+   "name": "unzip",
+   "version": "6.0-28ubuntu4",
+   "section": "utils",
+   "desc": "extraction d'archives ZIP",
+   "long": "Liste et extrait le contenu d'une archive ZIP.",
+   "size": 174080,
+   "installed_size": 528384,
+   "depends": [
+    "zlib1g"
+   ],
+   "provides": [
+    "unzip"
+   ]
+  },
+  {
+   "name": "hello",
+   "version": "2.10-3build1",
+   "section": "devel",
+   "desc": "exemple de paquet à script",
+   "long": "Paquet de démonstration : il installe réellement un script shell\ndans $PREFIX/bin, exécuté ensuite par le shell du système.",
+   "size": 25600,
+   "installed_size": 49152,
+   "provides": [
+    "hello"
+   ],
+   "files": [
+    {
+     "path": "bin/hello",
+     "asset": "repo/files/hello",
+     "mode": "755"
+    }
+   ]
+  },
+  {
+   "name": "sysinfo",
+   "version": "1.2-1",
+   "section": "utils",
+   "desc": "résumé système en script shell",
+   "long": "Second exemple de paquet à script : agrège des informations\nlues dans /proc et via toybox.",
+   "size": 18432,
+   "installed_size": 36864,
+   "provides": [
+    "sysinfo"
+   ],
+   "files": [
+    {
+     "path": "bin/sysinfo",
+     "asset": "repo/files/sysinfo",
+     "mode": "755"
+    }
+   ]
+  }
+ ]
+}
