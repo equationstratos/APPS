@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
@@ -25,12 +24,8 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -147,12 +142,16 @@ private fun TabBar(
             }
         }
         Box(
-            Modifier.clickable { Terminal.newSession() }.padding(8.dp)
-        ) { Icon(Icons.Default.Add, "nouvel onglet", tint = Color.White, modifier = Modifier.size(20.dp)) }
+            Modifier.clickable { Terminal.newSession() }.padding(horizontal = 10.dp, vertical = 6.dp)
+        ) {
+            Text("+", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+        }
         Box {
             Box(
-                Modifier.clickable { menu = true }.padding(8.dp)
-            ) { Icon(Icons.Default.MoreVert, "menu", tint = Color.White, modifier = Modifier.size(20.dp)) }
+                Modifier.clickable { menu = true }.padding(horizontal = 10.dp, vertical = 6.dp)
+            ) {
+                Text("\u22ee", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            }
             DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                 DropdownMenuItem(text = { Text("Nouvel onglet") }, onClick = {
                     menu = false; Terminal.newSession()

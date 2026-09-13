@@ -40,7 +40,6 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.material3:material3")
-    implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.compose.ui:ui-tooling-preview")
     // Client SSH complet (fork maintenu de JSch : ed25519, rsa-sha2, chacha20)
     implementation("com.github.mwiede:jsch:0.2.26")
