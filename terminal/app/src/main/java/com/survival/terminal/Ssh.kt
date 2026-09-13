@@ -207,7 +207,8 @@ object Ssh {
     private suspend fun interactive(ctx: ExecContext, sess: com.jcraft.jsch.Session, t: Target): Int =
         coroutineScope {
             val ch = sess.openChannel("shell") as ChannelShell
-            ch.setPtyType("xterm-256color", 100, 40, 0, 0)
+            val cols = (ctx.session?.cols ?: 80).coerceIn(20, 200)
+            ch.setPtyType("xterm-256color", cols, 40, 0, 0)
             val ins = ch.inputStream
             val outs = ch.outputStream
             ch.connect(15000)
@@ -230,14 +231,22 @@ object Ssh {
                     }
                 } catch (_: Exception) { }
             }
-            try {
-                while (isActive && !ch.isClosed) {
+            // Envoi du clavier vers le serveur, dans sa propre tâche : quand le shell
+            // distant se termine (« exit »), le lecteur s'arrête et libère la session,
+            // sans attendre que l'utilisateur tape encore quelque chose.
+            val writer = launch {
+                while (isActive) {
                     val line = term?.readRaw() ?: break
                     try {
-                        outs.write((line + "\n").toByteArray(Charsets.UTF_8)); outs.flush()
+                        // Entrée = retour chariot, comme un vrai terminal (le pty distant le convertit)
+                        outs.write((line + "\r").toByteArray(Charsets.UTF_8)); outs.flush()
                     } catch (_: Exception) { break }
                 }
+            }
+            try {
+                reader.join()
             } finally {
+                writer.cancel()
                 reader.cancel()
                 term?.rawSink = null
                 term?.echoMode = EchoMode.FULL

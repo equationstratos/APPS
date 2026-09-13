@@ -88,6 +88,7 @@ class TerminalBuffer(private val maxLines: Int = 3000) {
     private var bold = false
     private var mode = 0 // 0 texte, 1 apres ESC, 2 CSI, 3 OSC, 4 charset
     private val escBuf = StringBuilder()
+    private var pendingCr = false
 
     /** Appelable depuis n'importe quel thread : le rendu est regroupe sur le thread UI. */
     fun write(s: String) {
@@ -119,6 +120,7 @@ class TerminalBuffer(private val maxLines: Int = 3000) {
     fun clear() {
         val doIt = {
             lines.clear(); segs.clear(); cur.setLength(0)
+            pendingCr = false
             current = AnnotatedString(""); version++
         }
         if (Looper.myLooper() == Looper.getMainLooper()) doIt() else handler.post { doIt() }
@@ -126,6 +128,13 @@ class TerminalBuffer(private val maxLines: Int = 3000) {
 
     private fun feed(ch: Char) {
         val code = ch.code
+        // Un pseudo-terminal (SSH) termine ses lignes par CR+LF : le CR ne doit
+        // effacer la ligne que s'il n'est pas suivi d'un saut de ligne.
+        if (pendingCr) {
+            pendingCr = false
+            if (ch == '\n') { newline(); return }
+            cur.setLength(0); segs.clear()
+        }
         when (mode) {
             1 -> when (ch) {
                 '[' -> { mode = 2; escBuf.setLength(0) }
@@ -139,7 +148,7 @@ class TerminalBuffer(private val maxLines: Int = 3000) {
             else -> when {
                 code == Ansi.ESC_CODE -> mode = 1
                 ch == '\n' -> newline()
-                ch == '\r' -> { cur.setLength(0); segs.clear() }
+                ch == '\r' -> pendingCr = true
                 ch == '\t' -> cur.append(" ".repeat(8 - (lineLength() % 8)))
                 code == 8 -> if (cur.isNotEmpty()) cur.setLength(cur.length - 1)
                 code >= 32 -> cur.append(ch)
