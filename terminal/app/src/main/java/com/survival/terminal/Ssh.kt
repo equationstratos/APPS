@@ -153,31 +153,74 @@ object Ssh {
             val jsch = newJSch(ctx, identity)
             var sess: com.jcraft.jsch.Session? = null
             try {
+                // 1. Le port répond-il ? On le sait en quelques instants, au lieu
+                //    d'attendre sans rien dire que la poignée de main échoue.
+                ctx.println("${Ansi.GREY}Connexion à ${t.host} port ${t.port}...${Ansi.RESET}")
+                val t0 = System.currentTimeMillis()
+                try {
+                    java.net.Socket().use { probe ->
+                        probe.connect(java.net.InetSocketAddress(t.host, t.port), 12000)
+                    }
+                } catch (e: java.net.UnknownHostException) {
+                    ctx.error("ssh : impossible de résoudre le nom d'hôte ${t.host}")
+                    return@withContext 255
+                } catch (e: java.net.SocketTimeoutException) {
+                    ctx.error("ssh : ${t.host} port ${t.port} ne répond pas (délai dépassé).")
+                    ctx.println("Le port est filtré : pare-feu du serveur, ou opérateur mobile qui")
+                    ctx.println("bloque le port 22. Vérifiez avec ${Ansi.CYAN}nc -z -w 5 ${t.host} ${t.port}${Ansi.RESET},")
+                    ctx.println("essayez en Wi-Fi, ou un autre port : ${Ansi.CYAN}ssh -p 2222 ${t.user}@${t.host}${Ansi.RESET}")
+                    return@withContext 255
+                } catch (e: java.net.ConnectException) {
+                    ctx.error("ssh : connexion refusée par ${t.host}:${t.port}")
+                    ctx.println("Le serveur répond mais rien n'écoute sur ce port : le service SSH")
+                    ctx.println("est peut-être arrêté, ou configuré sur un autre port.")
+                    return@withContext 255
+                }
+                val ms = System.currentTimeMillis() - t0
+                ctx.println("${Ansi.GREY}Port ouvert en $ms ms, négociation SSH...${Ansi.RESET}")
+
                 sess = jsch.getSession(t.user, t.host, t.port)
                 sess.setUserInfo(TermUserInfo(ctx))
                 sess.setConfig("StrictHostKeyChecking", options["StrictHostKeyChecking"] ?: "ask")
                 sess.setConfig("PreferredAuthentications", "publickey,keyboard-interactive,password")
                 for ((k, v) in options) if (k != "StrictHostKeyChecking") sess.setConfig(k, v)
-                sess.connect(25000)
-                ctx.session?.buffer?.write(
-                    "${Ansi.GREY}Connecté à ${t.host} (${sess.serverVersion})${Ansi.RESET}\n")
+                // Ctrl+C doit pouvoir interrompre une connexion qui traîne.
+                val opened = sess
+                ctx.shell.activeCloser = { try { opened.disconnect() } catch (_: Exception) { } }
+                // Large : ce délai couvre aussi le temps de saisie du mot de passe.
+                sess.connect(90000)
+                ctx.println("${Ansi.GREY}Connecté à ${t.host} (${sess.serverVersion})${Ansi.RESET}")
                 if (command != null) execRemote(ctx, sess, command)
                 else interactive(ctx, sess, t)
             } catch (e: Exception) {
                 val m = e.message ?: "erreur inconnue"
                 when {
-                    m.contains("Auth fail", true) || m.contains("Auth cancel", true) ->
+                    m.contains("Auth fail", true) || m.contains("Auth cancel", true) -> {
                         ctx.error("${t.user}@${t.host} : permission refusée (publickey, password).")
+                        ctx.println("Mot de passe erroné, ou le serveur refuse l'accès à ce compte.")
+                    }
+                    m.contains("timed out", true) || m.contains("timeout", true) -> {
+                        ctx.error("ssh : ${t.host} n'a pas terminé la négociation SSH à temps.")
+                        ctx.println("Le port ${t.port} est ouvert, mais aucune réponse SSH exploitable.")
+                        ctx.println("Causes possibles : ce port n'héberge pas un serveur SSH, un")
+                        ctx.println("équipement réseau filtre la connexion, ou le serveur est très")
+                        ctx.println("lent à répondre (option UseDNS activée dans sshd_config).")
+                    }
                     m.contains("UnknownHost", true) || m.contains("resolve", true) ->
                         ctx.error("ssh : impossible de résoudre le nom d'hôte ${t.host}")
                     m.contains("Connection refused", true) ->
                         ctx.error("ssh : connexion refusée par ${t.host}:${t.port}")
                     m.contains("reject HostKey", true) ->
                         ctx.error("Clé d'hôte refusée : connexion abandonnée.")
+                    m.contains("HostKey", true) || m.contains("known_hosts", true) -> {
+                        ctx.error("ssh : la clé du serveur ne correspond pas à celle mémorisée.")
+                        ctx.println("Si le serveur a été réinstallé : ${Ansi.CYAN}rm ~/.ssh/known_hosts${Ansi.RESET}")
+                    }
                     else -> ctx.error("ssh : $m")
                 }
                 255
             } finally {
+                ctx.shell.activeCloser = null
                 try { sess?.disconnect() } catch (_: Exception) { }
             }
         }

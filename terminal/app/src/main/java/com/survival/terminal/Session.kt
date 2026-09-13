@@ -93,6 +93,7 @@ class Session(val id: Int, private val scope: CoroutineScope) {
                 buffer.write("${Ansi.BRED}erreur interne : ${e.message}${Ansi.RESET}\n")
             } finally {
                 running = false
+                shell.activeCloser = null
                 echoMode = EchoMode.FULL
                 rawSink = null
                 statusLine = null
@@ -115,6 +116,7 @@ class Session(val id: Int, private val scope: CoroutineScope) {
         if (!running) { buffer.write(shell.promptText() + "^C\n"); return }
         buffer.write("^C\n")
         try { shell.activeProcess?.destroy() } catch (_: Exception) { }
+        try { shell.activeCloser?.invoke() } catch (_: Exception) { }
         job?.cancel()
     }
 
@@ -138,6 +140,10 @@ class Session(val id: Int, private val scope: CoroutineScope) {
     }
 
     suspend fun readInput(prompt: String, echo: Boolean): String? {
+        // Ce qui a été tapé avant l'affichage de l'invite ne lui était pas destiné :
+        // sinon un « ls » tapé pendant une connexion répondrait à la question posée
+        // ensuite par le serveur.
+        drain()
         if (prompt.isNotEmpty()) buffer.write(prompt)
         val previous = echoMode
         echoMode = if (echo) EchoMode.FULL else EchoMode.HIDDEN

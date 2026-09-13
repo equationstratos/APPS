@@ -19,6 +19,9 @@ class Shell(val session: Session?) {
 
     @Volatile var activeProcess: Process? = null
 
+    /** Fermeture d'une opération réseau en cours (connexion SSH), pour Ctrl+C. */
+    @Volatile var activeCloser: (() -> Unit)? = null
+
     init {
         val prefix = Fs.prefix.absolutePath
         env["HOME"] = Fs.home.absolutePath
