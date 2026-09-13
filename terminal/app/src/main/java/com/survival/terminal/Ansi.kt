@@ -39,17 +39,43 @@ object Ansi {
 
     fun strip(s: String): String = s.replace(Regex("\\x1B\\[[0-9;?]*[a-zA-Z]"), "")
 
-    /** Palette Tango, celle des terminaux Ubuntu. */
+    /** Palette Solarized Dark (Ethan Schoonover), correspondance officielle. */
     val palette = arrayOf(
-        Color(0xFF2E3436), Color(0xFFCC0000), Color(0xFF4E9A06), Color(0xFFC4A000),
-        Color(0xFF3465A4), Color(0xFF75507B), Color(0xFF06989A), Color(0xFFD3D7CF),
-        Color(0xFF555753), Color(0xFFEF2929), Color(0xFF8AE234), Color(0xFFFCE94F),
-        Color(0xFF729FCF), Color(0xFFAD7FA8), Color(0xFF34E2E2), Color(0xFFEEEEEC)
+        Color(0xFF073642), // noir     base02
+        Color(0xFFDC322F), // rouge
+        Color(0xFF859900), // vert
+        Color(0xFFB58900), // jaune
+        Color(0xFF268BD2), // bleu
+        Color(0xFFD33682), // magenta
+        Color(0xFF2AA198), // cyan
+        Color(0xFFEEE8D5), // blanc    base2
+        Color(0xFF002B36), // noir vif base03
+        Color(0xFFCB4B16), // orange
+        Color(0xFF586E75), // base01
+        Color(0xFF657B83), // base00
+        Color(0xFF839496), // base0
+        Color(0xFF6C71C4), // violet
+        Color(0xFF93A1A1), // base1
+        Color(0xFFFDF6E3)  // base3
     )
 
-    val defaultFg = Color(0xFFDDDDDD)
-    val background = Color(0xFF1C0016)
-    val accent = Color(0xFFE95420)
+    val defaultFg = Color(0xFF93A1A1)   // base1
+    val background = Color(0xFF002B36)  // base03
+    val accent = Color(0xFF268BD2)      // bleu Solarized
+
+    /** Teintes de l'interface, tirées de la même palette. */
+    object Ui {
+        val bg = Color(0xFF002B36)          // base03
+        val surface = Color(0xFF073642)     // base02
+        val surfaceHigh = Color(0xFF0A4453)
+        val text = Color(0xFF93A1A1)        // base1
+        val textDim = Color(0xFF657B83)     // base00
+        val accent = Color(0xFF268BD2)      // bleu
+        val green = Color(0xFF859900)
+        val red = Color(0xFFDC322F)
+        val onAccent = Color(0xFF002B36)
+        val editorBar = Color(0xFFEEE8D5)   // base2
+    }
 
     /** Couleur xterm 256 : 16 fixes, cube 6x6x6, puis 24 gris. */
     fun color256(n: Int): Color = when {
@@ -215,7 +241,9 @@ class TerminalBuffer(private val maxLines: Int = 3000) {
                 23 -> style = style.copy(fontStyle = FontStyle.Normal)
                 24 -> style = style.copy(textDecoration = TextDecoration.None)
                 27 -> style = style.copy(background = Color.Unspecified, color = Ansi.defaultFg)
-                in 30..37 -> style = style.copy(color = Ansi.palette[(c - 30) + if (bold) 8 else 0])
+                // en Solarized les couleurs « vives » sont des gris de fond :
+                // le gras ne change donc pas la teinte, seulement la graisse
+                in 30..37 -> style = style.copy(color = Ansi.palette[c - 30])
                 38 -> {
                     if (i + 2 < codes.size && codes[i + 1] == 5) {
                         style = style.copy(color = Ansi.color256(codes[i + 2])); i += 2

@@ -115,7 +115,7 @@ private fun TabBar(
     var menu by remember { mutableStateOf(false) }
     val clipboard = LocalClipboardManager.current
     Row(
-        Modifier.fillMaxWidth().background(Color(0xFF2C001E)).padding(horizontal = 4.dp, vertical = 2.dp),
+        Modifier.fillMaxWidth().background(Ansi.Ui.surface).padding(horizontal = 4.dp, vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(Modifier.weight(1f).horizontalScroll(rememberScrollState())) {
@@ -125,7 +125,7 @@ private fun TabBar(
                     Modifier
                         .padding(2.dp)
                         .background(
-                            if (selected) Ansi.accent else Color(0xFF45103A),
+                            if (selected) Ansi.Ui.accent else Ansi.Ui.surfaceHigh,
                             RoundedCornerShape(6.dp)
                         )
                         .clickable { Terminal.active = i }
@@ -133,7 +133,7 @@ private fun TabBar(
                 ) {
                     Text(
                         s.statusLine ?: "sh ${s.id}",
-                        color = if (selected) Color(0xFF1C0016) else Color(0xFFCCCCCC),
+                        color = if (selected) Ansi.Ui.onAccent else Ansi.Ui.text,
                         fontSize = 12.sp,
                         fontFamily = FontFamily.Monospace,
                         fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
@@ -144,13 +144,13 @@ private fun TabBar(
         Box(
             Modifier.clickable { Terminal.newSession() }.padding(horizontal = 10.dp, vertical = 6.dp)
         ) {
-            Text("+", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Text("+", color = Ansi.Ui.text, fontSize = 20.sp, fontWeight = FontWeight.Bold)
         }
         Box {
             Box(
                 Modifier.clickable { menu = true }.padding(horizontal = 10.dp, vertical = 6.dp)
             ) {
-                Text("\u22ee", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text("\u22ee", color = Ansi.Ui.text, fontSize = 20.sp, fontWeight = FontWeight.Bold)
             }
             DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                 DropdownMenuItem(text = { Text("Nouvel onglet") }, onClick = {
@@ -243,7 +243,7 @@ private fun KeyRow(
     Row(
         Modifier
             .fillMaxWidth()
-            .background(Color(0xFF241021))
+            .background(Ansi.Ui.surface)
             .horizontalScroll(rememberScrollState())
             .padding(vertical = 2.dp)
     ) {
@@ -251,13 +251,13 @@ private fun KeyRow(
             Box(
                 Modifier
                     .padding(horizontal = 2.dp, vertical = 2.dp)
-                    .background(Color(0xFF3A2436), RoundedCornerShape(5.dp))
+                    .background(Ansi.Ui.surfaceHigh, RoundedCornerShape(5.dp))
                     .clickable { onKey(k, session, input, onInput, onHist, histIndex) }
                     .padding(horizontal = 9.dp, vertical = 7.dp)
             ) {
                 Text(
                     k,
-                    color = if (k.startsWith("^") || k.length > 1) Ansi.accent else Color(0xFFDDDDDD),
+                    color = if (k.startsWith("^") || k.length > 1) Ansi.Ui.accent else Ansi.Ui.text,
                     fontFamily = FontFamily.Monospace,
                     fontSize = (fontSize - 1).coerceAtLeast(10).sp
                 )
@@ -357,13 +357,13 @@ private fun InputRow(
     Row(
         Modifier
             .fillMaxWidth()
-            .background(Color(0xFF241021))
+            .background(Ansi.Ui.surface)
             .padding(horizontal = 6.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             prompt,
-            color = if (session.running) Ansi.accent else Color(0xFF8AE234),
+            color = if (session.running) Ansi.Ui.accent else Ansi.Ui.green,
             fontFamily = FontFamily.Monospace,
             fontSize = (fontSize - 1).coerceAtLeast(10).sp,
             fontWeight = FontWeight.Bold
@@ -394,7 +394,7 @@ private fun InputRow(
         ) {
             Text(
                 if (session.running) "■" else "▶",
-                color = if (session.running) Color(0xFFEF2929) else Ansi.accent,
+                color = if (session.running) Ansi.Ui.red else Ansi.Ui.accent,
                 fontSize = (fontSize + 3).sp,
                 fontWeight = FontWeight.Bold
             )

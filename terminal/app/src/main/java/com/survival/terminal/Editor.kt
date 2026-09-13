@@ -34,8 +34,8 @@ import androidx.compose.ui.unit.sp
 fun EditorOverlay(session: Session, state: EditorState, fontSize: Int) {
     var value by remember(state) { mutableStateOf(TextFieldValue(state.initial)) }
     val modified = value.text != state.initial
-    val bar = Color(0xFFD3D7CF)
-    val barText = Color(0xFF1C0016)
+    val bar = Ansi.Ui.editorBar
+    val barText = Ansi.Ui.bg
 
     Column(Modifier.fillMaxSize().background(Ansi.background)) {
         // barre de titre
@@ -87,7 +87,7 @@ fun EditorOverlay(session: Session, state: EditorState, fontSize: Int) {
             }
             Text(
                 "  ${state.file.name} — ^O enregistre, ^X quitte",
-                color = Color(0xFF888888), fontFamily = FontFamily.Monospace, fontSize = 11.sp,
+                color = Ansi.Ui.textDim, fontFamily = FontFamily.Monospace, fontSize = 11.sp,
                 modifier = Modifier.padding(top = 4.dp)
             )
         }
@@ -98,15 +98,15 @@ fun EditorOverlay(session: Session, state: EditorState, fontSize: Int) {
 private fun NanoKey(key: String, label: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Box(
         modifier
-            .background(Color(0xFF2A2A2A))
+            .background(Ansi.Ui.surface)
             .clickable { onClick() }
             .padding(vertical = 10.dp),
         contentAlignment = Alignment.Center
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(key, color = Ansi.accent, fontFamily = FontFamily.Monospace,
+            Text(key, color = Ansi.Ui.accent, fontFamily = FontFamily.Monospace,
                 fontSize = 13.sp, fontWeight = FontWeight.Bold)
-            Text(" $label", color = Color(0xFFDDDDDD), fontFamily = FontFamily.Monospace, fontSize = 12.sp)
+            Text(" $label", color = Ansi.Ui.text, fontFamily = FontFamily.Monospace, fontSize = 12.sp)
         }
     }
 }

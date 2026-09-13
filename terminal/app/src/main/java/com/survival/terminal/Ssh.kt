@@ -121,6 +121,7 @@ object Ssh {
             return if (args.isEmpty()) 2 else 0
         }
         var port = 22
+        var verbose = false
         var identity: String? = null
         var user = ctx.shell.env["USER"] ?: Distro.USER
         val options = LinkedHashMap<String, String>()
@@ -139,7 +140,8 @@ object Ssh {
                     val p = kv.split("=", limit = 2)
                     if (p.size == 2) options[p[0]] = p[1]
                 }
-                a == "-v" || a == "-q" || a == "-t" || a == "-T" || a == "-C" -> {}
+                a == "-v" -> verbose = true
+                a == "-q" || a == "-t" || a == "-T" || a == "-C" -> {}
                 a.startsWith("-") -> {}
                 else -> target = a
             }
@@ -152,14 +154,34 @@ object Ssh {
         return withContext(Dispatchers.IO) {
             val jsch = newJSch(ctx, identity)
             var sess: com.jcraft.jsch.Session? = null
+            // « ssh -v » : on relaie la trace interne, indispensable quand une
+            // négociation échoue sans message clair.
+            JSch.setLogger(if (!verbose) null else object : com.jcraft.jsch.Logger {
+                override fun isEnabled(level: Int): Boolean = true
+                override fun log(level: Int, message: String?) {
+                    val tag = when (level) {
+                        com.jcraft.jsch.Logger.WARN -> "avertissement"
+                        com.jcraft.jsch.Logger.ERROR, com.jcraft.jsch.Logger.FATAL -> "erreur"
+                        else -> "debug1"
+                    }
+                    ctx.out.write("${Ansi.GREY}$tag: $message${Ansi.RESET}\n")
+                }
+            })
             try {
                 // 1. Le port répond-il ? On le sait en quelques instants, au lieu
                 //    d'attendre sans rien dire que la poignée de main échoue.
                 ctx.println("${Ansi.GREY}Connexion à ${t.host} port ${t.port}...${Ansi.RESET}")
                 val t0 = System.currentTimeMillis()
+                var banner: String? = null
                 try {
                     java.net.Socket().use { probe ->
                         probe.connect(java.net.InetSocketAddress(t.host, t.port), 12000)
+                        // Un serveur SSH annonce sa version dès la connexion : on la lit,
+                        // c'est le moyen le plus sûr de savoir si le port parle bien SSH.
+                        probe.soTimeout = 12000
+                        banner = try {
+                            probe.getInputStream().bufferedReader().readLine()
+                        } catch (_: java.net.SocketTimeoutException) { null }
                     }
                 } catch (e: java.net.UnknownHostException) {
                     ctx.error("ssh : impossible de résoudre le nom d'hôte ${t.host}")
@@ -177,7 +199,25 @@ object Ssh {
                     return@withContext 255
                 }
                 val ms = System.currentTimeMillis() - t0
-                ctx.println("${Ansi.GREY}Port ouvert en $ms ms, négociation SSH...${Ansi.RESET}")
+                val announce = banner
+                when {
+                    announce == null -> {
+                        ctx.error("ssh : ${t.host} accepte la connexion mais n'envoie aucune bannière SSH.")
+                        ctx.println("Le port ${t.port} est ouvert, mais rien n'y répond en SSH après 12 s.")
+                        ctx.println("Soit ce port héberge un autre service, soit un équipement réseau")
+                        ctx.println("laisse passer la connexion sans la relayer, soit sshd est bloqué.")
+                        ctx.println("Sur le serveur : ${Ansi.CYAN}systemctl status ssh${Ansi.RESET} et ${Ansi.CYAN}ss -lntp | grep :${t.port}${Ansi.RESET}")
+                        return@withContext 255
+                    }
+                    !announce.startsWith("SSH-") -> {
+                        ctx.error("ssh : le port ${t.port} de ${t.host} n'est pas un serveur SSH.")
+                        ctx.println("Il a répondu : ${Ansi.BOLD}${announce.take(60)}${Ansi.RESET}")
+                        ctx.println("Indiquez le bon port, par exemple ${Ansi.CYAN}ssh -p 2222 ${t.user}@${t.host}${Ansi.RESET}")
+                        return@withContext 255
+                    }
+                }
+                ctx.println("${Ansi.GREY}Serveur : $announce (en $ms ms)${Ansi.RESET}")
+                ctx.println("${Ansi.GREY}Négociation des clés...${Ansi.RESET}")
 
                 sess = jsch.getSession(t.user, t.host, t.port)
                 sess.setUserInfo(TermUserInfo(ctx))
@@ -221,6 +261,7 @@ object Ssh {
                 255
             } finally {
                 ctx.shell.activeCloser = null
+                if (verbose) JSch.setLogger(null)
                 try { sess?.disconnect() } catch (_: Exception) { }
             }
         }
