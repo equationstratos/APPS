@@ -1,2 +1,1 @@
-Les APK sont générés automatiquement par GitHub Actions.
-# trigger rebuild
+APK des apps de la boîte à outils, générés automatiquement par GitHub Actions à chaque modification.

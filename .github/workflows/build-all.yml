@@ -2,14 +2,23 @@ name: Build All APKs
 
 on:
   push:
+    paths-ignore:
+      - 'apk/**'
+      - '**/*.md'
+      - 'ruview/**'
   workflow_dispatch:
 
 permissions:
   contents: write
 
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -30,19 +39,20 @@ jobs:
       - name: Install Android SDK components
         run: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-35" "build-tools;35.0.0"
 
-      - name: Build Debug APK
+      - name: Build release APK
         working-directory: ${{ matrix.app }}
-        run: ./gradlew assembleDebug --stacktrace
+        run: ./gradlew assembleRelease --stacktrace
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.app }}-apk
-          path: ${{ matrix.app }}/app/build/outputs/apk/debug/*.apk
+          path: ${{ matrix.app }}/app/build/outputs/apk/release/*.apk
           if-no-files-found: error
 
   commit-apks:
     needs: build
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
 
     steps:
@@ -57,10 +67,11 @@ jobs:
 
       - name: Copy APKs to apk folder
         run: |
+          shopt -s nullglob
           mkdir -p apk
           for dir in downloaded-apks/*-apk; do
             app=$(basename "$dir" | sed 's/-apk$//')
-            cp "$dir"/*.apk "apk/${app}.apk"
+            for f in "$dir"/*.apk; do cp "$f" "apk/${app}.apk"; done
           done
           ls -lh apk/
 

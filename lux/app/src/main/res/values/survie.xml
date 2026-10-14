@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="survie_bg">#FF1A1A2E</color>
+    <style name="Theme.Survie" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/survie_bg</item>
+        <item name="android:colorBackground">@color/survie_bg</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+</resources>
