@@ -1,5 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Flashlight casting a light beam, tilted towards the top right. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-    <path android:fillColor="#4A9FFF" android:pathData="M60,22L42,56L52,56L48,86L66,52L56,52Z" />
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:pivotX="54"
+        android:pivotY="54"
+        android:rotation="45">
+        <!-- Light beam -->
+        <path
+            android:pathData="M54,40 V30 M45,40 L39,32 M63,40 L69,32"
+            android:strokeColor="#4A9FFF"
+            android:strokeLineCap="round"
+            android:strokeWidth="5" />
+        <!-- Lens -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M44,45 H64 A2,2 0 0 1 66,47 V50 H42 V47 A2,2 0 0 1 44,45 Z" />
+        <!-- Head -->
+        <path
+            android:fillColor="#4A9FFF"
+            android:pathData="M42,50 H66 L61,58 H47 Z" />
+        <!-- Body -->
+        <path
+            android:fillColor="#4A9FFF"
+            android:pathData="M47,58 H61 V77 A3,3 0 0 1 58,80 H50 A3,3 0 0 1 47,77 Z" />
+        <!-- Switch -->
+        <path
+            android:fillColor="#0F3460"
+            android:pathData="M52.5,63 H55.5 A1.5,1.5 0 0 1 57,64.5 V68.5 A1.5,1.5 0 0 1 55.5,70 H52.5 A1.5,1.5 0 0 1 51,68.5 V64.5 A1.5,1.5 0 0 1 52.5,63 Z" />
+    </group>
 </vector>

@@ -1,8 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-    <path android:fillColor="#0F3460" android:pathData="M48,48m-20,0a20,20 0,1 1,40 0a20,20 0,1 1,-40 0" />
-    <path android:fillColor="#4A9FFF" android:pathData="M48,48m-16,0a16,16 0,1 1,32 0a16,16 0,1 1,-32 0" />
-    <path android:fillColor="#1A1A2E" android:pathData="M48,48m-12,0a12,12 0,1 1,24 0a12,12 0,1 1,-24 0" />
-    <path android:fillColor="#4A9FFF" android:pathData="M62,62L78,78L74,82L58,66Z" />
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Handle: drawn first so the lens rim covers the joint. -->
+    <path
+        android:pathData="M60,60L71,71"
+        android:strokeColor="#4A9FFF"
+        android:strokeWidth="9"
+        android:strokeLineCap="round" />
+    <!-- Glass -->
+    <path
+        android:fillColor="#0F3460"
+        android:pathData="M34,48a14,14 0 1,1 28,0a14,14 0 1,1 -28,0Z" />
+    <!-- Rim -->
+    <path
+        android:pathData="M34,48a14,14 0 1,1 28,0a14,14 0 1,1 -28,0Z"
+        android:strokeColor="#4A9FFF"
+        android:strokeWidth="6" />
+    <!-- Reflection -->
+    <path
+        android:pathData="M40,48A8,8 0 0,1 48,40"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round" />
 </vector>

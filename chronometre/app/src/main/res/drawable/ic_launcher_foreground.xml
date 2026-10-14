@@ -1,11 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-    <path android:fillColor="#0F3460" android:pathData="M54,58m-28,0a28,28 0,1 1,56 0a28,28 0,1 1,-56 0" />
-    <path android:fillColor="#4A9FFF" android:pathData="M54,58m-24,0a24,24 0,1 1,48 0a24,24 0,1 1,-48 0" />
-    <path android:fillColor="#1A1A2E" android:pathData="M54,58m-20,0a20,20 0,1 1,40 0a20,20 0,1 1,-40 0" />
-    <path android:fillColor="#4A9FFF" android:pathData="M53,58L53,38L55,38L55,58Z" />
-    <path android:fillColor="#4A9FFF" android:pathData="M54,58L68,52L68,54Z" />
-    <path android:fillColor="#4A9FFF" android:pathData="M54,58m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0" />
-    <path android:fillColor="#4A9FFF" android:pathData="M50,26L58,26L58,30L50,30Z" />
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Dial -->
+    <path
+        android:fillColor="#0F3460"
+        android:pathData="M38,57a16,16 0,1 1,32 0a16,16 0,1 1,-32 0Z" />
+    <!-- Elapsed sector, 12 to 2 o'clock -->
+    <path
+        android:fillColor="#4A9FFF"
+        android:pathData="M54,57L54,45A12,12 0,0 1,64.39 51Z" />
+    <!-- Case -->
+    <path
+        android:pathData="M35,57a19,19 0,1 1,38 0a19,19 0,1 1,-38 0Z"
+        android:strokeColor="#4A9FFF"
+        android:strokeWidth="6" />
+    <!-- Crown stem and button -->
+    <path
+        android:pathData="M54,36L54,31M49,29L59,29"
+        android:strokeColor="#4A9FFF"
+        android:strokeLineCap="round"
+        android:strokeWidth="5" />
+    <!-- Lap pusher -->
+    <path
+        android:pathData="M68.9,42.1L72.4,38.6"
+        android:strokeColor="#4A9FFF"
+        android:strokeLineCap="round"
+        android:strokeWidth="5" />
+    <!-- Hand -->
+    <path
+        android:pathData="M54,57L63.5,51.5"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="round"
+        android:strokeWidth="4" />
+    <!-- Pivot -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M51,57a3,3 0,1 1,6 0a3,3 0,1 1,-6 0Z" />
 </vector>

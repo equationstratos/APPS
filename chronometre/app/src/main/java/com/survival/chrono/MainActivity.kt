@@ -1,110 +1,208 @@
 package com.survival.chrono
 
+import android.content.Context
+import android.media.AudioManager
 import android.os.Bundle
+import android.os.SystemClock
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.edit
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
+
+private const val FRAME_MS = 33L
+private const val BACKGROUND_TICK_MS = 250L
+private const val PREFS = "survie"
+private const val KEY_TIMER_SECONDS = "chrono_minuteur_secondes"
+private const val TAB_STOPWATCH = 0
+private const val TAB_TIMER = 1
+private val TAB_LABELS = listOf("Chrono", "Minuteur")
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent { ChronoApp() }
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+        )
+        // Volume keys adjust the alarm volume, the only sound this app makes.
+        volumeControlStream = AudioManager.STREAM_ALARM
+        setContent { SurvieTheme { AppScreen() } }
     }
 }
 
 @Composable
-fun ChronoApp() {
-    val bg = Color(0xFF1A1A2E)
-    val accent = Color(0xFF4A9FFF)
-    val navy = Color(0xFF0F3460)
-
-    var ms by remember { mutableLongStateOf(0L) }
-    var running by remember { mutableStateOf(false) }
-    var tab by remember { mutableIntStateOf(0) }
-    var timerTarget by remember { mutableLongStateOf(0L) }
-    var timerRemaining by remember { mutableLongStateOf(0L) }
-    var timerRunning by remember { mutableStateOf(false) }
-
-    LaunchedEffect(running) {
-        if (!running) return@LaunchedEffect
-        val start = System.currentTimeMillis() - ms
-        while (running) {
-            ms = System.currentTimeMillis() - start
-            delay(16)
-        }
+fun AppScreen() {
+    val context = LocalContext.current
+    val prefs = remember(context) { context.getSharedPreferences(PREFS, Context.MODE_PRIVATE) }
+    var tab by rememberSaveable { mutableIntStateOf(TAB_STOPWATCH) }
+    val stopwatch = rememberSaveable(saver = Stopwatch.Saver) { Stopwatch() }
+    val timer = rememberSaveable(saver = CountdownTimer.Saver) {
+        CountdownTimer.fromSeconds(prefs.getInt(KEY_TIMER_SECONDS, DEFAULT_TIMER_SECONDS))
     }
+    var now by remember { mutableLongStateOf(SystemClock.elapsedRealtime()) }
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
 
-    LaunchedEffect(timerRunning) {
-        if (!timerRunning) return@LaunchedEffect
-        val start = System.currentTimeMillis()
-        val duration = timerRemaining
-        while (timerRunning) {
-            val elapsed = System.currentTimeMillis() - start
-            val remaining = (duration - elapsed).coerceAtLeast(0L)
-            timerRemaining = remaining
-            if (remaining <= 0L) {
-                timerRunning = false
-                break
+    // Driven by snapshotFlow rather than recomposition: Compose pauses recomposition while the
+    // activity is stopped, but the countdown must still reach zero and ring in the background.
+    LaunchedEffect(stopwatch, timer, lifecycle) {
+        snapshotFlow { stopwatch.running || timer.phase == TimerPhase.Running }.collectLatest { active ->
+            if (!active) return@collectLatest
+            while (true) {
+                val t = SystemClock.elapsedRealtime()
+                now = t
+                timer.checkExpired(t)
+                val visible = lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
+                delay(if (visible) FRAME_MS else BACKGROUND_TICK_MS)
             }
-            delay(16)
+        }
+    }
+    LaunchedEffect(timer, context) {
+        val alarm = Alarm(context.applicationContext)
+        snapshotFlow { timer.phase == TimerPhase.Ringing }.collectLatest { ringing ->
+            if (ringing) {
+                alarm.ringUntil(timer.alarmDeadline)
+                timer.reset()
+            }
         }
     }
 
+    val ringing = timer.phase == TimerPhase.Ringing
+    LaunchedEffect(ringing) {
+        if (ringing) tab = TAB_TIMER
+    }
+    KeepScreenOn(stopwatch.running || timer.phase == TimerPhase.Running || ringing)
+
+    val nowMs = { now }
     Column(
-        Modifier.fillMaxSize().background(bg).padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        Modifier
+            .fillMaxSize()
+            .background(Bg)
+            .safeDrawingPadding()
+            .padding(horizontal = 20.dp, vertical = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Chronomètre", color = accent, fontSize = 28.sp, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(24.dp))
-
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Btn("Chrono", tab == 0, accent, navy, bg) { tab = 0 }
-            Btn("Minuteur", tab == 1, accent, navy, bg) { tab = 1 }
-        }
-        Spacer(Modifier.height(40.dp))
-
-        if (tab == 0) {
-            Text(fmt(ms), color = accent, fontSize = 52.sp, fontWeight = FontWeight.Light)
-            Spacer(Modifier.height(32.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                Btn(if (running) "Stop" else "Start", true, accent, navy, bg) { running = !running }
-                Btn("Reset", true, accent, navy, bg) { running = false; ms = 0L }
-            }
-        } else {
-            Text(fmt(timerRemaining), color = accent, fontSize = 52.sp, fontWeight = FontWeight.Light)
-            Spacer(Modifier.height(32.dp))
-
-            if (!timerRunning && timerRemaining == 0L) {
-                Text("Choisir durée", color = Color.White, fontSize = 16.sp)
-                Spacer(Modifier.height(12.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf(Pair("30s", 30), Pair("1m", 60), Pair("2m", 120), Pair("5m", 300)).forEach { (label, secs) ->
-                        Btn(label, true, accent, navy, bg) {
-                            timerTarget = secs.toLong() * 1000L
-                            timerRemaining = secs.toLong() * 1000L
-                            timerRunning = true
-                        }
-                    }
+        Text(
+            text = "Chronomètre",
+            color = Accent,
+            fontSize = 26.sp,
+            lineHeight = 32.sp,
+            fontWeight = FontWeight.Bold
+        )
+        Spacer(Modifier.height(16.dp))
+        SegmentedControl(
+            selected = tab,
+            badges = listOf(
+                if (stopwatch.running) Success else null,
+                when (timer.phase) {
+                    TimerPhase.Running -> Success
+                    TimerPhase.Ringing -> Danger
+                    TimerPhase.Idle, TimerPhase.Paused -> null
                 }
+            ),
+            onSelect = { tab = it }
+        )
+        Spacer(Modifier.height(16.dp))
+        Box(
+            Modifier
+                .weight(1f)
+                .fillMaxWidth()
+        ) {
+            if (tab == TAB_TIMER) {
+                TimerPane(
+                    timer = timer,
+                    nowMs = nowMs,
+                    onStart = {
+                        if (timer.start()) prefs.edit { putInt(KEY_TIMER_SECONDS, timer.configuredSeconds) }
+                    }
+                )
             } else {
-                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Btn(if (timerRunning) "Pause" else "Reprendre", true, accent, navy, bg) { timerRunning = !timerRunning }
-                    Btn("Reset", true, accent, navy, bg) { timerRunning = false; timerRemaining = 0L; timerTarget = 0L }
+                StopwatchPane(stopwatch = stopwatch, nowMs = nowMs)
+            }
+        }
+    }
+}
+
+/** Two-option switch; a dot on the hidden tab tells that its tool is still running. */
+@Composable
+private fun SegmentedControl(selected: Int, badges: List<Color?>, onSelect: (Int) -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(Navy)
+            .padding(4.dp)
+            .selectableGroup()
+    ) {
+        TAB_LABELS.forEachIndexed { index, label ->
+            val isSelected = index == selected
+            val badge = badges.getOrNull(index)
+            Row(
+                Modifier
+                    .weight(1f)
+                    .heightIn(min = 48.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(if (isSelected) Accent else Color.Transparent)
+                    .selectable(selected = isSelected, role = Role.Tab, onClick = { onSelect(index) }),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = label,
+                    color = if (isSelected) Bg else Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+                if (badge != null && !isSelected) {
+                    Spacer(Modifier.width(8.dp))
+                    Box(
+                        Modifier
+                            .size(8.dp)
+                            .background(badge, CircleShape)
+                    )
                 }
             }
         }
@@ -112,21 +210,10 @@ fun ChronoApp() {
 }
 
 @Composable
-fun Btn(label: String, enabled: Boolean, accent: Color, navy: Color, bg: Color, onClick: () -> Unit) {
-    Box(
-        Modifier.clickable(enabled) { onClick() }
-            .background(if (enabled) accent else navy, RoundedCornerShape(8.dp))
-            .padding(horizontal = 20.dp, vertical = 12.dp),
-        Alignment.Center
-    ) {
-        Text(label, color = bg, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+private fun KeepScreenOn(active: Boolean) {
+    val view = LocalView.current
+    DisposableEffect(view, active) {
+        view.keepScreenOn = active
+        onDispose { view.keepScreenOn = false }
     }
-}
-
-fun fmt(ms: Long): String {
-    val h = ms / 3600000
-    val m = (ms % 3600000) / 60000
-    val s = (ms % 60000) / 1000
-    val c = (ms % 1000) / 10
-    return if (h > 0) "%02d:%02d:%02d".format(h, m, s) else "%02d:%02d.%02d".format(m, s, c)
 }

@@ -1,7 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Miroir à main : manche, cadre annulaire, verre teinté (translucide pour l'icône monochrome) et reflets. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-    <path android:fillColor="#0F3460" android:pathData="M34,28L74,28Q78,28 78,32L78,76Q78,80 74,80L34,80Q30,80 30,76L30,32Q30,28 34,28Z" />
-    <path android:fillColor="#4A9FFF" android:pathData="M38,32L70,32Q74,32 74,36L74,72Q74,76 70,76L38,76Q34,76 34,72L34,36Q34,32 38,32Z" />
-    <path android:fillColor="#1A1A2E" android:pathData="M42,36L66,36L66,72L42,72Z" />
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:pathData="M54,62L54,78"
+        android:strokeColor="#4A9FFF"
+        android:strokeWidth="7"
+        android:strokeLineCap="round" />
+    <path
+        android:fillColor="#4A9FFF"
+        android:pathData="M50,60h8a2,2 0,0 1,2 2v4a2,2 0,0 1,-2 2h-8a2,2 0,0 1,-2 -2v-4a2,2 0,0 1,2 -2Z" />
+    <path
+        android:fillColor="#4A9FFF"
+        android:fillType="evenOdd"
+        android:pathData="M36,45a18,18 0,1 1,36 0a18,18 0,1 1,-36 0Z M41,45a13,13 0,1 1,26 0a13,13 0,1 1,-26 0Z" />
+    <path
+        android:fillAlpha="0.3"
+        android:fillColor="#4A9FFF"
+        android:pathData="M41,45a13,13 0,1 1,26 0a13,13 0,1 1,-26 0Z" />
+    <path
+        android:pathData="M46,45L52,39"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M48,52L61,39"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round" />
 </vector>

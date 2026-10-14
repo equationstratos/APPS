@@ -1,6 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-    <path android:fillColor="#4A9FFF" android:pathData="M54,32m-8,0a8,8 0,1 1,16 0a8,8 0,1 1,-16 0" />
-    <path android:fillColor="#0F3460" android:pathData="M44,46L64,46L66,76L42,76Z" />
-    <path android:fillColor="#4A9FFF" android:pathData="M28,80L80,80L80,84L28,84Z" />
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Head -->
+    <path
+        android:fillColor="#4A9FFF"
+        android:pathData="M47,32a7,7 0 1,1 14,0a7,7 0 1,1 -14,0Z" />
+    <!-- Shoulders and torso -->
+    <path
+        android:fillColor="#4A9FFF"
+        android:pathData="M41,59V51a9,9 0 0,1 9,-9h8a9,9 0 0,1 9,9V59Z" />
+    <!-- Gauge: low, normal and high zones -->
+    <path
+        android:pathData="M35,71H41"
+        android:strokeAlpha="0.5"
+        android:strokeColor="#4A9FFF"
+        android:strokeLineCap="round"
+        android:strokeWidth="6" />
+    <path
+        android:pathData="M50,71H58"
+        android:strokeColor="#4A9FFF"
+        android:strokeLineCap="round"
+        android:strokeWidth="6" />
+    <path
+        android:pathData="M67,71H73"
+        android:strokeAlpha="0.5"
+        android:strokeColor="#4A9FFF"
+        android:strokeLineCap="round"
+        android:strokeWidth="6" />
+    <!-- Marker -->
+    <path
+        android:pathData="M56,63V77"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="round"
+        android:strokeWidth="3" />
 </vector>
