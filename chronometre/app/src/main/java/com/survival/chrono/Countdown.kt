@@ -92,6 +92,9 @@ internal class CountdownTimer(
         private set
     private var pausedRemaining by mutableLongStateOf(pausedRemaining)
 
+    /** Start of the current run, so the readout is exact before the UI clock's first tick. */
+    private var runStartedAt by mutableLongStateOf(0L)
+
     val configuredSeconds: Int get() = hours * 3_600 + minutes * 60 + seconds
     val configuredMs: Long get() = configuredSeconds * 1_000L
 
@@ -119,7 +122,7 @@ internal class CountdownTimer(
 
     fun remainingAt(now: Long): Long = when (phase) {
         TimerPhase.Idle -> configuredMs
-        TimerPhase.Running -> (endAt - now).coerceIn(0L, total)
+        TimerPhase.Running -> (endAt - maxOf(now, runStartedAt)).coerceIn(0L, total)
         TimerPhase.Paused -> pausedRemaining
         TimerPhase.Ringing -> 0L
     }
@@ -129,7 +132,8 @@ internal class CountdownTimer(
         val duration = configuredMs
         if (phase != TimerPhase.Idle || duration <= 0L) return false
         total = duration
-        endAt = SystemClock.elapsedRealtime() + duration
+        runStartedAt = SystemClock.elapsedRealtime()
+        endAt = runStartedAt + duration
         phase = TimerPhase.Running
         return true
     }
@@ -147,7 +151,8 @@ internal class CountdownTimer(
 
     fun resume() {
         if (phase != TimerPhase.Paused) return
-        endAt = SystemClock.elapsedRealtime() + pausedRemaining
+        runStartedAt = SystemClock.elapsedRealtime()
+        endAt = runStartedAt + pausedRemaining
         phase = TimerPhase.Running
     }
 

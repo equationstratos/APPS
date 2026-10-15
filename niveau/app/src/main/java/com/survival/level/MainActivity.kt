@@ -391,8 +391,13 @@ private fun LevelGauge(measure: LevelReading, level: Boolean, modifier: Modifier
         when (measure) {
             is LevelReading.Flat -> drawBullseye(measure.x, measure.y, bubbleColor, guideColor)
             // The vial is fixed to the edge the phone stands on, like the body of a real level.
-            is LevelReading.Upright -> rotate(degrees = measure.edge * 90f) {
-                drawTube(measure.angle, bubbleColor, guideColor)
+            is LevelReading.Upright -> {
+                val alongWidth = measure.edge % 2 == 0
+                val along = if (alongWidth) size.width else size.height
+                val across = if (alongWidth) size.height else size.width
+                rotate(degrees = measure.edge * 90f) {
+                    drawTube(measure.angle, minOf(along * 0.94f, across * 4f), bubbleColor, guideColor)
+                }
             }
         }
     }
@@ -440,8 +445,7 @@ private fun DrawScope.drawBullseye(x: Float, y: Float, bubbleColor: Color, guide
 }
 
 /** Horizontal vial drawn in the portrait frame; the caller rotates it onto the resting edge. */
-private fun DrawScope.drawTube(angle: Float, bubbleColor: Color, guideColor: Color) {
-    val length = size.minDimension * 0.94f
+private fun DrawScope.drawTube(angle: Float, length: Float, bubbleColor: Color, guideColor: Color) {
     if (length <= 0f) return
     val height = length * 0.2f
     val rim = 3.dp.toPx()

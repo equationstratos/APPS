@@ -357,7 +357,7 @@ private fun SpeedCard(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         SignalLine(signal)
-        val speedText = speedMps?.let { formatSpeed(it, unit) } ?: "--"
+        val speedText = speedMps?.let { formatSpeed(it, unit) } ?: NO_VALUE
         BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
             // Shrink only when the number would not fit (very large font scale).
             val fitted = with(LocalDensity.current) { (maxWidth / (speedText.length * 0.62f)).toSp() }

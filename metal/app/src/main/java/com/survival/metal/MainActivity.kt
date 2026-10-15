@@ -38,6 +38,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -206,10 +207,11 @@ private fun DetectorContent(sensorManager: SensorManager, sensor: Sensor) {
         else -> 0f
     }
 
+    // Keyed on isRunning so the ToneGenerator is released while the app is paused.
     DetectionFeedback(
         strength = strength,
-        sound = soundOn,
-        vibrator = if (vibrationOn) vibrator else null
+        sound = soundOn && detector.isRunning,
+        vibrator = if (vibrationOn && detector.isRunning) vibrator else null
     )
 
     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
@@ -414,7 +416,7 @@ private fun PulsingRing(color: Color, modifier: Modifier = Modifier) {
 private fun GaugeReadout(detector: MagnetDetector, valueColor: Color) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         if (!detector.isCalibrated) {
-            Text("Calibration", color = Accent, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Text("Calibrage", color = Accent, fontSize = 20.sp, fontWeight = FontWeight.Bold)
             Text(
                 "${(detector.calibrationProgress * 100f).roundToInt()} %",
                 color = Color.White,
@@ -458,7 +460,7 @@ private fun StatusBanner(calibrated: Boolean, detecting: Boolean, color: Color) 
     val content: Color
     when {
         !calibrated -> {
-            label = "Calibration en cours…"
+            label = "Calibrage en cours…"
             container = Navy
             content = Color.White
         }
@@ -610,7 +612,15 @@ private fun SettingsCard(
             onValueChange = { onThresholdChange(it.roundToInt().toFloat()) },
             onValueChangeFinished = onThresholdChangeFinished,
             valueRange = MIN_THRESHOLD..MAX_THRESHOLD,
-            steps = (MAX_THRESHOLD - MIN_THRESHOLD).toInt() - 1
+            steps = (MAX_THRESHOLD - MIN_THRESHOLD).toInt() - 1,
+            // 44 snap points would draw a dense row of tick dots across the track.
+            colors = SliderDefaults.colors(
+                thumbColor = Accent,
+                activeTrackColor = Accent,
+                activeTickColor = Color.Transparent,
+                inactiveTrackColor = Navy,
+                inactiveTickColor = Color.Transparent
+            )
         )
         Row {
             Text("Plus sensible", color = TextSecondary, fontSize = 12.sp, modifier = Modifier.weight(1f))

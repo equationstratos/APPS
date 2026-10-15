@@ -57,6 +57,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -236,7 +237,10 @@ private fun RulerScreen(pxPerMm: Float, factor: Float, onCalibrate: () -> Unit) 
             pxPerMm = pxPerMm,
             cursorMm = { cursorMm },
             safeTopPx = safeTopPx,
-            modifier = Modifier.fillMaxSize()
+            // Own layer: moving the cursor re-records only this layer, not the whole scale.
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer { }
         )
     }
 }
@@ -505,23 +509,35 @@ private fun CalibrationPanel(
     onReset: () -> Unit,
     onDone: () -> Unit
 ) {
+    // The real card covers the top-left corner, so the controls sit at the bottom where they stay reachable.
     Column(
         Modifier
-            .fillMaxWidth()
+            .fillMaxSize()
             .safeDrawingPadding()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp, vertical = 16.dp)
+            .padding(horizontal = 20.dp, vertical = 16.dp),
+        verticalArrangement = Arrangement.SpaceBetween
     ) {
-        Text("Calibrer", color = Accent, fontSize = 26.sp, fontWeight = FontWeight.Bold)
-        Text(
-            "Posez une carte bancaire dans le coin haut gauche, long côté contre le bord gauche. " +
-                "Glissez le doigt sur l'écran pour amener la ligne bleue au bord bas de la carte, " +
-                "puis affinez avec − et +.",
-            color = TextSecondary,
-            fontSize = 14.sp
-        )
-        Spacer(Modifier.height(16.dp))
-        Surface(shape = RoundedCornerShape(16.dp), color = Card) {
+        Column(
+            Modifier
+                .weight(1f, fill = false)
+                .verticalScroll(rememberScrollState())
+        ) {
+            Text("Calibrer", color = Accent, fontSize = 26.sp, fontWeight = FontWeight.Bold)
+            Text(
+                "Posez une carte bancaire dans le coin haut gauche, long côté contre le bord gauche. " +
+                    "Glissez le doigt sur l'écran pour amener la ligne bleue au bord bas de la carte, " +
+                    "puis affinez avec − et +.",
+                color = TextSecondary,
+                fontSize = 14.sp
+            )
+        }
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp),
+            shape = RoundedCornerShape(16.dp),
+            color = Card
+        ) {
             Column(
                 Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)

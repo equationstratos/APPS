@@ -3,6 +3,7 @@ package com.survival.chrono
 import android.content.Context
 import android.media.AudioManager
 import android.os.Bundle
+import android.os.PowerManager
 import android.os.SystemClock
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -55,6 +56,8 @@ import kotlinx.coroutines.flow.collectLatest
 
 private const val FRAME_MS = 33L
 private const val BACKGROUND_TICK_MS = 250L
+private const val WAKE_LOCK_TAG = "chronometre:minuteur"
+private const val WAKE_LOCK_MARGIN_MS = 5_000L
 private const val PREFS = "survie"
 private const val KEY_TIMER_SECONDS = "chrono_minuteur_secondes"
 private const val TAB_STOPWATCH = 0
@@ -115,6 +118,7 @@ fun AppScreen() {
         if (ringing) tab = TAB_TIMER
     }
     KeepScreenOn(stopwatch.running || timer.phase == TimerPhase.Running || ringing)
+    KeepCpuAwake(timer.phase == TimerPhase.Running || ringing, timer)
 
     val nowMs = { now }
     Column(
@@ -215,5 +219,29 @@ private fun KeepScreenOn(active: Boolean) {
     DisposableEffect(view, active) {
         view.keepScreenOn = active
         onDispose { view.keepScreenOn = false }
+    }
+}
+
+/**
+ * Keeps the CPU running while the countdown runs or rings, so the end is still detected on time
+ * after the user turns the screen off. The timeout covers the case where the app stays in the
+ * background past the alarm, when no recomposition can change [active].
+ */
+@Composable
+private fun KeepCpuAwake(active: Boolean, timer: CountdownTimer) {
+    val context = LocalContext.current
+    DisposableEffect(context, active) {
+        val lock = if (active) {
+            context.getSystemService(PowerManager::class.java)
+                ?.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKE_LOCK_TAG)
+                ?.apply {
+                    setReferenceCounted(false)
+                    val untilAlarmEnd = (timer.alarmDeadline - SystemClock.elapsedRealtime()).coerceAtLeast(0L)
+                    acquire(untilAlarmEnd + WAKE_LOCK_MARGIN_MS)
+                }
+        } else {
+            null
+        }
+        onDispose { lock?.release() }
     }
 }

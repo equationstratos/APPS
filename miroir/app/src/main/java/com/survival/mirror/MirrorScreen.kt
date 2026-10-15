@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Slider
@@ -42,6 +43,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
@@ -86,7 +88,13 @@ internal fun MirrorScreen() {
     }
 
     val ring by animateDpAsState(if (lightOn) RingLightWidth else 0.dp, label = "ringLight")
-    val ringInsets = WindowInsets(left = ring, top = ring, right = ring, bottom = ring)
+    // The white band also spans the full status/navigation bars so their dark icons stay on white.
+    val density = LocalDensity.current
+    val systemBars = WindowInsets.systemBars
+    val ringFraction = ring / RingLightWidth
+    val ringTop = maxOf(ring, with(density) { systemBars.getTop(this).toDp() } * ringFraction)
+    val ringBottom = maxOf(ring, with(density) { systemBars.getBottom(this).toDp() } * ringFraction)
+    val ringInsets = WindowInsets(left = ring, top = ringTop, right = ring, bottom = ringBottom)
     val subtitle = when {
         frozenFrame != null -> "Image figée"
         trueView -> "Vue réelle : comme les autres vous voient"
@@ -102,7 +110,7 @@ internal fun MirrorScreen() {
         Column(
             Modifier
                 .fillMaxSize()
-                .padding(ring)
+                .padding(start = ring, top = ringTop, end = ring, bottom = ringBottom)
                 .clip(RoundedCornerShape(ring))
                 .background(Bg)
                 .windowInsetsPadding(WindowInsets.safeDrawing.exclude(ringInsets))

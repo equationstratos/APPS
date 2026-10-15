@@ -61,12 +61,15 @@ class GpsSession(
 
     private val gnssCallback = object : GnssStatus.Callback() {
         override fun onSatelliteStatusChanged(status: GnssStatus) {
-            val visible = status.satelliteCount
-            var used = 0
-            for (index in 0 until visible) {
-                if (status.usedInFix(index)) used++
+            // Dual-frequency receivers list one entry per signal (L1, L5...): count each satellite once.
+            val visible = HashSet<Int>()
+            val used = HashSet<Int>()
+            for (index in 0 until status.satelliteCount) {
+                val id = status.getConstellationType(index) * 1000 + status.getSvid(index)
+                visible.add(id)
+                if (status.usedInFix(index)) used.add(id)
             }
-            onSatellites(Satellites(used = used, visible = visible))
+            onSatellites(Satellites(used = used.size, visible = visible.size))
         }
 
         override fun onStopped() {

@@ -59,6 +59,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.edit
+import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 
 private val Bg = Color(0xFF1A1A2E)
@@ -73,6 +74,7 @@ private val Tabular = TextStyle(fontFeatureSettings = "tnum")
 private const val PREFS_NAME = "survie"
 private const val KEY_BPM = "metronome_bpm"
 private const val KEY_BEATS = "metronome_beats_per_bar"
+private const val FLASH_MS = 120L
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -119,10 +121,15 @@ fun AppScreen() {
     var playing by rememberSaveable { mutableStateOf(false) }
     var audioError by rememberSaveable { mutableStateOf(false) }
     var currentBeat by remember { mutableIntStateOf(-1) }
+    var beatCount by remember { mutableIntStateOf(0) }
+    var flash by remember { mutableStateOf(false) }
     val tapTempo = remember { TapTempo() }
     val engine = remember {
         MetronomeEngine(
-            onBeat = { currentBeat = it },
+            onBeat = {
+                currentBeat = it
+                beatCount++
+            },
             onError = {
                 playing = false
                 audioError = true
@@ -149,6 +156,15 @@ fun AppScreen() {
         }
     }
 
+    // With one beat per bar the beat index never changes, so each beat is shown as a short flash.
+    LaunchedEffect(beatCount) {
+        if (beatCount > 0) {
+            flash = true
+            delay(FLASH_MS)
+            flash = false
+        }
+    }
+
     LaunchedEffect(bpm, beatsPerBar) {
         prefs.edit {
             putInt(KEY_BPM, bpm)
@@ -168,7 +184,11 @@ fun AppScreen() {
         Text("Tempo précis, mesure et tempo au tap", color = TextSecondary, fontSize = 14.sp)
         Spacer(Modifier.height(16.dp))
 
-        TempoCard(bpm = bpm, beatsPerBar = beatsPerBar, currentBeat = if (playing) currentBeat else -1)
+        TempoCard(
+            bpm = bpm,
+            beatsPerBar = beatsPerBar,
+            currentBeat = if (playing && (beatsPerBar > 1 || flash)) currentBeat else -1
+        )
         Spacer(Modifier.height(16.dp))
 
         TempoButtons(

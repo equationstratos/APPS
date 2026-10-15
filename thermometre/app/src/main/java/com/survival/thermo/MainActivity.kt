@@ -56,6 +56,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
@@ -282,7 +283,7 @@ private data class Note(val text: String, val color: Color)
 
 private fun batteryNote(celsius: Float, plugged: Boolean): Note? = when {
     !celsius.isFinite() -> null
-    celsius >= 45f -> Note("Batterie très chaude : débranchez-la et laissez refroidir le téléphone.", Danger)
+    celsius >= 45f -> Note("Batterie très chaude : débranchez le chargeur et laissez refroidir le téléphone.", Danger)
     celsius >= 40f -> Note("Batterie chaude.", Warning)
     plugged -> Note("En charge : la batterie chauffe, la mesure surestime l'air ambiant.", TextSecondary)
     else -> null
@@ -305,11 +306,16 @@ private fun AppScreen() {
     val mainCelsius = if (ambient.available) ambient.celsius else battery.celsius
     var minCelsius by rememberSaveable { mutableFloatStateOf(Float.NaN) }
     var maxCelsius by rememberSaveable { mutableFloatStateOf(Float.NaN) }
-    LaunchedEffect(mainCelsius) {
-        if (mainCelsius.isFinite()) {
-            if (minCelsius.isNaN() || mainCelsius < minCelsius) minCelsius = mainCelsius
-            if (maxCelsius.isNaN() || mainCelsius > maxCelsius) maxCelsius = mainCelsius
-        }
+    // Recomposition is paused while the activity is stopped; collecting the state directly keeps
+    // min/max up to date during the screen-off period the tip recommends.
+    LaunchedEffect(ambient, battery) {
+        snapshotFlow { if (ambient.available) ambient.celsius else battery.celsius }
+            .collect { value ->
+                if (value.isFinite()) {
+                    if (minCelsius.isNaN() || value < minCelsius) minCelsius = value
+                    if (maxCelsius.isNaN() || value > maxCelsius) maxCelsius = value
+                }
+            }
     }
 
     Column(
@@ -350,7 +356,7 @@ private fun AppScreen() {
             note = if (ambient.available) {
                 when {
                     !ambient.celsius.isFinite() -> Note("Mesure en cours…", TextSecondary)
-                    ambient.unreliable -> Note("Capteur en cours de calibration : mesure peu fiable.", Warning)
+                    ambient.unreliable -> Note("Capteur en cours de calibrage : mesure peu fiable.", Warning)
                     else -> null
                 }
             } else {

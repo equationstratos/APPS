@@ -307,14 +307,14 @@ private fun UnavailableCard() {
             .padding(16.dp)
     ) {
         Text(
-            "Capteur magnétique non disponible sur cet appareil",
-            color = Warning,
+            "Capteurs de boussole non disponibles sur cet appareil.",
+            color = Danger,
             fontSize = 18.sp,
             fontWeight = FontWeight.SemiBold
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            "La boussole a besoin d’un magnétomètre pour trouver le nord. Cet appareil n’en possède pas.",
+            "La boussole a besoin d'un magnétomètre et d'un accéléromètre pour trouver le nord.",
             color = TextSecondary,
             fontSize = 14.sp
         )

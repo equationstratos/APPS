@@ -5,6 +5,7 @@ import java.math.MathContext
 import java.math.RoundingMode
 import java.text.NumberFormat
 import java.util.Locale
+import kotlin.math.abs
 
 /**
  * A unit related to its category's base unit by an affine law: base = (value + offset) * factor.
@@ -17,8 +18,15 @@ class MeasureUnit(
     private val offset: Double = 0.0
 ) {
     fun toBase(value: Double): Double = (value + offset) * factor
-    fun fromBase(base: Double): Double = base / factor - offset
+    fun fromBase(base: Double): Double {
+        val value = base / factor - offset
+        // Cancelling the offset leaves binary round-off (−459,67 °F → 5,7 × 10⁻¹⁴ K): snap it to zero.
+        return if (abs(value) <= abs(offset) * OFFSET_ROUND_OFF) 0.0 else value
+    }
 }
+
+/** Relative size, against the offset, below which a converted value is pure round-off. */
+private const val OFFSET_ROUND_OFF = 1e-12
 
 /** Base units: metre, kilogram, degree Celsius, litre, metre per second, square metre, pascal. */
 enum class Category(

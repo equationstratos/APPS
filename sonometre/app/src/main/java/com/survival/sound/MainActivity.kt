@@ -76,7 +76,7 @@ import androidx.core.content.edit
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.compose.currentStateAsState
+import androidx.lifecycle.repeatOnLifecycle
 import java.util.Locale
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CancellationException
@@ -228,35 +228,38 @@ private fun MeterContent() {
         mutableFloatStateOf(prefs.getFloat(KEY_CALIBRATION, 0f).coerceIn(-OFFSET_LIMIT, OFFSET_LIMIT))
     }
 
-    // Capture only while the screen is visible: ON_STOP cancels the flow, which releases the mic.
-    val lifecycleState by LocalLifecycleOwner.current.lifecycle.currentStateAsState()
-    val measuring = running && lifecycleState.isAtLeast(Lifecycle.State.STARTED)
-
     val view = LocalView.current
-    DisposableEffect(measuring) {
-        view.keepScreenOn = measuring
+    DisposableEffect(running) {
+        view.keepScreenOn = running
         onDispose { view.keepScreenOn = false }
     }
 
-    LaunchedEffect(measuring) {
-        if (!measuring) return@LaunchedEffect
+    // Recomposition is paused while the activity is stopped, so a composition-derived flag would
+    // never stop the capture: repeatOnLifecycle reacts to ON_STOP itself and releases the mic.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(running, lifecycleOwner) {
+        if (!running) return@LaunchedEffect
         try {
-            SoundLevelMeter.levels(context.applicationContext).collect { level ->
-                current = level
-                stats = stats.add(level)
-                history = (history + level).takeLast(HISTORY_SIZE)
+            lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                try {
+                    SoundLevelMeter.levels(context.applicationContext).collect { level ->
+                        current = level
+                        stats = stats.add(level)
+                        history = (history + level).takeLast(HISTORY_SIZE)
+                    }
+                } finally {
+                    current = null
+                }
             }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             error = (e as? MicUnavailableException)?.message ?: MIC_UNAVAILABLE
             running = false
-        } finally {
-            current = null
         }
     }
 
-    ReadoutCard(level = current?.let { calibrated(it, offset) })
+    ReadoutCard(level = current?.let { calibrated(it, offset) }, running = running)
     StatsRow(stats = stats, offset = offset)
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Button(
@@ -298,7 +301,7 @@ private fun MeterContent() {
 }
 
 @Composable
-private fun ReadoutCard(level: Double?) {
+private fun ReadoutCard(level: Double?, running: Boolean) {
     SurvieCard {
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
@@ -313,7 +316,11 @@ private fun ReadoutCard(level: Double?) {
             LevelBar(level)
             Spacer(Modifier.height(8.dp))
             Text(
-                if (level == null) "Mesure arrêtée" else levelZone(level),
+                when {
+                    level != null -> levelZone(level)
+                    running -> "Mesure en cours…"
+                    else -> "Mesure arrêtée"
+                },
                 color = if (level == null) TextSecondary else levelColor(level),
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold

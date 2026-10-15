@@ -160,7 +160,6 @@ private fun AppScreen() {
             .fillMaxSize()
             .background(Bg)
             .safeDrawingPadding()
-            .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
         Text("Vibromètre", color = Accent, fontSize = 26.sp, fontWeight = FontWeight.Bold)
@@ -171,11 +170,11 @@ private fun AppScreen() {
         )
         Spacer(Modifier.height(16.dp))
         if (sensorManager != null && source != null) {
-            Vibrometer(sensorManager, source)
+            Vibrometer(sensorManager, source, Modifier.weight(1f))
         } else {
-            Panel {
+            Panel(Modifier.verticalScroll(rememberScrollState())) {
                 Text(
-                    "Accéléromètre non disponible sur cet appareil",
+                    "Accéléromètre non disponible sur cet appareil.",
                     color = Danger,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold
@@ -192,7 +191,7 @@ private fun AppScreen() {
 }
 
 @Composable
-private fun Vibrometer(sensorManager: SensorManager, source: VibrationSource) {
+private fun Vibrometer(sensorManager: SensorManager, source: VibrationSource, modifier: Modifier) {
     val analyzer = remember { VibrationAnalyzer() }
     var live by remember { mutableStateOf(Reading.Empty) }
     var frozen by rememberSaveable(stateSaver = ReadingSaver) { mutableStateOf<Reading?>(null) }
@@ -220,7 +219,7 @@ private fun Vibrometer(sensorManager: SensorManager, source: VibrationSource) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_RESUME -> {
-                    analyzer.restartFilter()
+                    analyzer.restart(SystemClock.elapsedRealtime())
                     sensorStarted = sensorManager.registerListener(
                         listener,
                         source.sensor,
@@ -255,27 +254,56 @@ private fun Vibrometer(sensorManager: SensorManager, source: VibrationSource) {
 
     val reading = frozen ?: live
 
-    Readout(reading)
-    Spacer(Modifier.height(12.dp))
-    Seismograph(reading.trace, isFrozen = frozen != null)
-    Spacer(Modifier.height(12.dp))
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Button(
-            onClick = {
+    // The actions stay pinned below the scrollable content so "Figer" is always reachable.
+    Column(modifier) {
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+            Readout(reading)
+            Spacer(Modifier.height(12.dp))
+            Seismograph(reading.trace, isFrozen = frozen != null)
+            if (!sensorStarted) {
+                Note(
+                    "Impossible de démarrer l'accéléromètre. Fermez les applications qui l'utilisent puis revenez.",
+                    Danger
+                )
+            }
+            if (accuracy == SensorManager.SENSOR_STATUS_UNRELIABLE) {
+                Note("Capteur peu fiable pour le moment : valeurs indicatives.", Warning)
+            }
+            if (source.removesGravity) {
+                Note(
+                    "Capteur d'accélération linéaire absent : la gravité est retirée par calcul.",
+                    TextSecondary
+                )
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        ActionBar(
+            isFrozen = frozen != null,
+            onToggleFreeze = {
                 frozen = if (frozen == null) analyzer.read(SystemClock.elapsedRealtime()) else null
             },
+            onResetPeak = {
+                analyzer.resetPeak()
+                live = live.withPeak(0f)
+                frozen = frozen?.withPeak(0f)
+            }
+        )
+    }
+}
+
+@Composable
+private fun ActionBar(isFrozen: Boolean, onToggleFreeze: () -> Unit, onResetPeak: () -> Unit) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Button(
+            onClick = onToggleFreeze,
             modifier = Modifier.weight(1f).heightIn(min = 48.dp),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = Bg)
         ) {
-            Text(if (frozen == null) "Figer" else "Reprendre", fontWeight = FontWeight.Bold)
+            Text(if (isFrozen) "Reprendre" else "Figer", fontWeight = FontWeight.Bold)
         }
         Button(
-            onClick = {
-                analyzer.resetPeak()
-                live = live.withPeak(0f)
-                frozen = frozen?.withPeak(0f)
-            },
+            onClick = onResetPeak,
             modifier = Modifier.weight(1f).heightIn(min = 48.dp),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Navy, contentColor = Color.White)
@@ -283,28 +311,12 @@ private fun Vibrometer(sensorManager: SensorManager, source: VibrationSource) {
             Text("Effacer le pic")
         }
     }
-
-    if (!sensorStarted) {
-        Note(
-            "Impossible de démarrer l'accéléromètre. Fermez les applications qui l'utilisent puis revenez.",
-            Danger
-        )
-    }
-    if (accuracy == SensorManager.SENSOR_STATUS_UNRELIABLE) {
-        Note("Capteur peu fiable pour le moment : valeurs indicatives.", Warning)
-    }
-    if (source.removesGravity) {
-        Note(
-            "Capteur d'accélération linéaire absent : la gravité est retirée par calcul.",
-            TextSecondary
-        )
-    }
 }
 
 @Composable
-private fun Panel(content: @Composable ColumnScope.() -> Unit) {
+private fun Panel(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     Column(
-        Modifier
+        modifier
             .fillMaxWidth()
             .background(Card, RoundedCornerShape(16.dp))
             .padding(16.dp),

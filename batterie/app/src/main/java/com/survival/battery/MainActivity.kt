@@ -384,7 +384,7 @@ private fun DetailsPanel(snapshot: BatterySnapshot, live: LiveProperties) {
             add(Detail("Tension", String.format(Locale.FRANCE, "%.2f V", it)))
         }
         add(Detail("Technologie", snapshot.technology ?: "Inconnue"))
-        live.currentMicroAmps?.let { add(Detail("Courant", formatCurrent(it))) }
+        live.currentMicroAmps?.let { add(Detail("Courant", formatCurrent(it, snapshot.status, snapshot.plugged))) }
         live.chargeMilliAmpHours?.let {
             add(Detail("Charge restante", String.format(Locale.FRANCE, "%,d mAh", it)))
         }
@@ -483,10 +483,18 @@ private fun temperatureColor(celsius: Float): Color = when {
     else -> Color.White
 }
 
-/** Positive CURRENT_NOW means current flowing into the battery. */
-private fun formatCurrent(microAmps: Int): String {
+/**
+ * The CURRENT_NOW sign convention (positive = into the battery) is not honoured by every
+ * manufacturer, so the direction comes from the charging state whenever it is unambiguous.
+ */
+private fun formatCurrent(microAmps: Int, status: Int, plugged: Int): String {
     val milliAmps = abs(microAmps.toLong()) / 1000.0
-    val direction = if (microAmps > 0) "entrant" else "sortant"
+    val incoming = when {
+        plugged == 0 || status == BatteryManager.BATTERY_STATUS_DISCHARGING -> false
+        status == BatteryManager.BATTERY_STATUS_CHARGING -> true
+        else -> microAmps > 0
+    }
+    val direction = if (incoming) "entrant" else "sortant"
     return String.format(Locale.FRANCE, "%,.0f mA (%s)", milliAmps, direction)
 }
 

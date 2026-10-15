@@ -71,6 +71,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
 
@@ -123,7 +124,7 @@ private const val PREFS_NAME = "survie"
 private const val KEY_STROBE_HZ = "lampe_strobo_hz"
 private const val KEY_STRENGTH = "lampe_intensite"
 
-private const val MSG_BUSY = "Lampe indisponible : caméra utilisée par une autre app"
+private const val MSG_BUSY = "Lampe indisponible : caméra utilisée par une autre application"
 private const val MSG_NO_FLASH = "Flash non disponible sur cet appareil. Le mode Écran reste utilisable."
 
 @Composable
@@ -321,6 +322,9 @@ private suspend fun runPattern(
                 val now = SystemClock.elapsedRealtime()
                 // After a stall (e.g. Doze) restart the timeline instead of replaying missed steps in a burst.
                 deadline = maxOf(deadline, now - MAX_LAG_MS) + stepDurationMs(step)
+                // delay() skips its cancellation check for non-positive values, which happens when the
+                // torch switches slower than a step (fast strobe on some devices).
+                ensureActive()
                 delay(deadline - now)
                 step = (step + 1) % stepCount
             }

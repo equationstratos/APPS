@@ -61,6 +61,7 @@ class MagnetDetector(restoredBaseline: Float = Float.NaN) : SensorEventListener 
         smoothed = Float.NaN
         // A calibration interrupted by a pause restarts from scratch: the phone has likely moved.
         calibrationSamples.clear()
+        if (!isCalibrated) calibrationProgress = 0f
         val registered = manager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_GAME)
         startFailed = !registered
         if (registered) {

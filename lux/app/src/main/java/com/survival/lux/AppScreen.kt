@@ -207,7 +207,7 @@ private fun ReadoutCard(state: LightMeterState) {
             )
             if (state.held) {
                 Text(
-                    "FIGÉ",
+                    "Figé",
                     color = Bg,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,

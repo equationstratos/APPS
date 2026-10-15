@@ -17,9 +17,9 @@
         android:pathData="M44.5,36H63.5A2.5,2.5 0,0 1,66 38.5V42.5A2.5,2.5 0,0 1,63.5 45H44.5A2.5,2.5 0,0 1,42 42.5V38.5A2.5,2.5 0,0 1,44.5 36ZM53.5,39H61.5A1.5,1.5 0,0 1,61.5 42H53.5A1.5,1.5 0,0 1,53.5 39Z" />
     <!-- Keys: plus, minus, times, equals -->
     <path
-        android:pathData="M43.5,54H50.5M47,50.5V57.5M57.5,54H64.5M44.2,64.2L49.8,69.8M49.8,64.2L44.2,69.8M57.5,64H64.5M57.5,70H64.5"
+        android:pathData="M43.5,54H50.5M47,50.5V57.5M57.5,54H64.5M44.2,64.2L49.8,69.8M49.8,64.2L44.2,69.8M57.5,63.5H64.5M57.5,70.5H64.5"
         android:strokeColor="#FFFFFF"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
-        android:strokeWidth="3.5" />
+        android:strokeWidth="4" />
 </vector>

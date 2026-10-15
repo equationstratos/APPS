@@ -72,7 +72,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.Observer
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import java.util.Locale
@@ -132,6 +131,10 @@ private fun cameraIssueMessage(code: Int): String = when (code) {
     CameraState.ERROR_CAMERA_IN_USE, CameraState.ERROR_MAX_CAMERAS_IN_USE ->
         "Caméra utilisée par une autre application. Fermez-la pour reprendre."
     CameraState.ERROR_CAMERA_DISABLED -> "La caméra est désactivée sur cet appareil."
+    CameraState.ERROR_DO_NOT_DISTURB_MODE_ENABLED ->
+        "Le mode Ne pas déranger bloque la caméra. Désactivez-le puis réessayez."
+    CameraState.ERROR_CAMERA_FATAL_ERROR, CameraState.ERROR_STREAM_CONFIG ->
+        "La caméra a rencontré une erreur. Touchez « Réessayer » pour la relancer."
     else -> "Caméra momentanément indisponible, nouvelle tentative…"
 }
 
@@ -156,7 +159,8 @@ internal fun MagnifierScreen() {
     var maxZoom by remember { mutableFloatStateOf(1f) }
     var sliderValue by remember { mutableFloatStateOf(0f) }
     var sliderDragging by remember { mutableStateOf(false) }
-    // Zoom chosen by the user; CameraX resets zoom whenever the camera closes, so it is re-applied on reopen.
+    // Zoom chosen by the user (saved only from gestures, never from camera resets); CameraX resets zoom
+    // whenever the camera closes, so it is re-applied on reopen.
     var savedLinearZoom by rememberSaveable { mutableFloatStateOf(0f) }
     var filter by rememberSaveable { mutableStateOf(ReadingFilter.Normal) }
 
@@ -213,16 +217,20 @@ internal fun MagnifierScreen() {
             minZoom = state.minZoomRatio
             maxZoom = state.maxZoomRatio
             if (!sliderDragging) sliderValue = state.linearZoom
-            if (cameraOpen && lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
-                savedLinearZoom = state.linearZoom
-            }
         }
         val torchObserver = Observer<Int> { state -> torchOn = state == TorchState.ON }
         val stateObserver = Observer<CameraState> { state ->
             val open = state.type == CameraState.Type.OPEN
             if (open && !cameraOpen && savedLinearZoom > 0f) cam.cameraControl.setLinearZoom(savedLinearZoom)
             cameraOpen = open
-            cameraIssue = state.error?.let { cameraIssueMessage(it.code) }
+            val error = state.error
+            if (error != null && error.type == CameraState.ErrorType.CRITICAL) {
+                // Critical errors are not retried by CameraX: offer a rebind instead of waiting forever.
+                cameraIssue = null
+                startError = cameraIssueMessage(error.code)
+            } else {
+                cameraIssue = error?.let { cameraIssueMessage(it.code) }
+            }
         }
         info.zoomState.observe(lifecycleOwner, zoomObserver)
         info.torchState.observe(lifecycleOwner, torchObserver)
@@ -301,6 +309,7 @@ internal fun MagnifierScreen() {
                             if (state != null) {
                                 val target = (state.zoomRatio * zoom).coerceIn(state.minZoomRatio, state.maxZoomRatio)
                                 cam.cameraControl.setZoomRatio(target)
+                                cam.cameraInfo.zoomState.value?.let { savedLinearZoom = it.linearZoom }
                             }
                         }
                     }
@@ -371,6 +380,7 @@ internal fun MagnifierScreen() {
                     onZoomChange = { value ->
                         sliderDragging = true
                         sliderValue = value
+                        savedLinearZoom = value
                         cam?.cameraControl?.setLinearZoom(value)
                     },
                     onZoomChangeFinished = { sliderDragging = false },

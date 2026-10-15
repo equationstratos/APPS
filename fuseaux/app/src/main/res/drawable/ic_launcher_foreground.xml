@@ -1,43 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Stroke-only artwork with no overlapping fills so the monochrome (themed) icon stays legible. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Globe body -->
+    <!-- Globe outline -->
     <path
-        android:fillColor="#0F3460"
+        android:strokeColor="#4A9FFF"
+        android:strokeWidth="5"
         android:pathData="M28,54 a26,26 0 1,1 52,0 a26,26 0 1,1 -52,0 Z" />
     <!-- Meridian -->
     <path
         android:strokeColor="#4A9FFF"
         android:strokeWidth="4"
         android:pathData="M41,54 a13,26 0 1,1 26,0 a13,26 0 1,1 -26,0 Z" />
-    <!-- Equator -->
+    <!-- Equator, interrupted inside the meridian to leave room for the clock hands -->
     <path
         android:strokeColor="#4A9FFF"
         android:strokeWidth="4"
         android:strokeLineCap="round"
-        android:pathData="M29,54 H79" />
-    <!-- Globe outline -->
-    <path
-        android:strokeColor="#4A9FFF"
-        android:strokeWidth="5"
-        android:pathData="M28,54 a26,26 0 1,1 52,0 a26,26 0 1,1 -52,0 Z" />
-    <!-- Clock hands: navy halo then white hands -->
-    <path
-        android:strokeColor="#0F3460"
-        android:strokeWidth="10"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round"
-        android:pathData="M54,37 L54,54 L63,59" />
+        android:pathData="M30,54 H41 M67,54 H78" />
+    <!-- Clock hands -->
     <path
         android:strokeColor="#FFFFFF"
         android:strokeWidth="5"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
-        android:pathData="M54,37 L54,54 L63,59" />
+        android:pathData="M54,36 L54,54 L61,58" />
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M49.5,54 a4.5,4.5 0 1,1 9,0 a4.5,4.5 0 1,1 -9,0 Z" />
+        android:pathData="M50,54 a4,4 0 1,1 8,0 a4,4 0 1,1 -8,0 Z" />
 </vector>

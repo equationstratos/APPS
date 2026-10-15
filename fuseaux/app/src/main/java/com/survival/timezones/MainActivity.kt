@@ -169,9 +169,10 @@ private fun AppScreen() {
         lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
             while (true) {
                 // Re-reading the system zone on every tick follows a time-zone change while travelling.
-                now = ZonedDateTime.now()
-                // Wall clock on purpose: the next tick must land on the displayed second boundary.
-                delay(1_000L - System.currentTimeMillis() % 1_000L)
+                val tick = ZonedDateTime.now()
+                now = tick
+                // Sleep to the next wall-clock second of the instant just shown, so no second is skipped or repeated.
+                delay(1_000L - tick.nano / 1_000_000)
             }
         }
     }

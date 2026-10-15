@@ -79,7 +79,7 @@ private const val GAUGE_MAX = 40.0
 private const val HEALTHY_BMI_MIN = 18.5
 private const val HEALTHY_BMI_MAX = 24.9
 private const val MAX_INPUT_LENGTH = 6
-private const val NBSP = ' '
+private const val NBSP = '\u00A0'
 
 private val GaugeTicks = listOf(15.0, 18.5, 25.0, 30.0, 35.0, 40.0)
 

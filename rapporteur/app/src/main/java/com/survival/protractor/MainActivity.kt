@@ -60,8 +60,8 @@ import kotlin.math.abs
 import kotlin.math.tan
 
 /** Approximate height of the readout card, the buttons and the gaps, so the dial takes what is left. */
-private val ReservedHeight = 250.dp
-private val MinDialSize = 200.dp
+private val ReservedHeight = 300.dp
+private val MinDialSize = 180.dp
 private val TabularDigits = TextStyle(fontFeatureSettings = "tnum")
 
 private val SampleSaver = Saver<Sample?, FloatArray>(
@@ -359,7 +359,7 @@ private fun MissingSensorCard() {
     ) {
         Text(
             "Accéléromètre non disponible sur cet appareil.",
-            color = Color.White,
+            color = Danger,
             fontSize = 16.sp,
             fontWeight = FontWeight.SemiBold
         )

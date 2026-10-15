@@ -57,6 +57,7 @@ class LevelSensor(
     /** Drops the filter history, e.g. after the app comes back from the background. */
     fun reset() {
         hasSample = false
+        upright = false
         onReliabilityChange(true)
     }
 
@@ -103,7 +104,8 @@ class LevelSensor(
         if (!norm.isFinite() || norm < MIN_GRAVITY) return null
 
         val inclination = acos((abs(gz) / norm).coerceIn(0f, 1f)).toDegrees()
-        upright = if (upright) inclination > FLAT_BELOW_DEG else inclination > UPRIGHT_ABOVE_DEG
+        val wasUpright = upright
+        upright = if (wasUpright) inclination > FLAT_BELOW_DEG else inclination > UPRIGHT_ABOVE_DEG
 
         if (!upright) {
             return LevelReading.Flat(
@@ -112,7 +114,8 @@ class LevelSensor(
             )
         }
         val roll = atan2(gx, gy).toDegrees()
-        if (abs(wrapDegrees(roll - edge * 90f)) > 45f + EDGE_HYSTERESIS_DEG) {
+        // Hysteresis only between edges while staying upright; a fresh stand-up picks the nearest edge.
+        if (!wasUpright || abs(wrapDegrees(roll - edge * 90f)) > 45f + EDGE_HYSTERESIS_DEG) {
             edge = (roll / 90f).roundToInt().mod(4)
         }
         return LevelReading.Upright(edge = edge, angle = wrapDegrees(roll - edge * 90f))

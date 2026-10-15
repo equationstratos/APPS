@@ -204,7 +204,7 @@ private fun CalcDisplay(state: CalcState, onBackspace: () -> Unit, modifier: Mod
                 .fillMaxWidth()
                 .height(72.dp)
                 .padding(start = 12.dp)
-                .semantics { liveRegion = LiveRegionMode.Polite }
+                .semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite }
         )
     }
 }
@@ -225,18 +225,23 @@ private fun AutoSizeText(
         val heightPx = constraints.maxHeight
         val style = TextStyle(color = color, fontWeight = fontWeight, fontFeatureSettings = "tnum")
         val fontSize = remember(text, style, widthPx, heightPx, maxFontSize, minFontSize, measurer) {
+            fun measureAt(size: Float) = measurer.measure(
+                text = AnnotatedString(text),
+                style = style.copy(fontSize = size.sp),
+                softWrap = false,
+                maxLines = 1
+            ).size
             var size = maxFontSize.value
-            while (size > minFontSize.value) {
-                val layout = measurer.measure(
-                    text = AnnotatedString(text),
-                    style = style.copy(fontSize = size.sp),
-                    softWrap = false,
-                    maxLines = 1
-                )
-                if (layout.size.width <= widthPx && layout.size.height <= heightPx) break
-                size -= FONT_STEP_SP
+            var measured = measureAt(size)
+            while (size > minFontSize.value && (measured.width > widthPx || measured.height > heightPx)) {
+                size = maxOf(size - FONT_STEP_SP, minFontSize.value)
+                measured = measureAt(size)
             }
-            maxOf(size, minFontSize.value).sp
+            // A long expression with a large system font scale can still be too wide at the floor size.
+            if (widthPx > 0 && measured.width > widthPx) {
+                size *= widthPx * 0.98f / measured.width
+            }
+            size.sp
         }
         Text(text = text, style = style.copy(fontSize = fontSize), maxLines = 1, softWrap = false)
     }
@@ -311,6 +316,7 @@ private fun RowScope.CalcKey(spec: KeySpec, highlighted: Boolean, onKey: (Key) -
         }
     }
     val description = spec.description
+    val fontSize = keyFontSize()
     Button(
         onClick = { onKey(spec.key) },
         modifier = Modifier
@@ -323,7 +329,9 @@ private fun RowScope.CalcKey(spec: KeySpec, highlighted: Boolean, onKey: (Key) -
     ) {
         Text(
             text = spec.label,
-            fontSize = keyFontSize(),
+            fontSize = fontSize,
+            // The Button's labelLarge style has a 20sp line height, too short to centre 28sp glyphs.
+            lineHeight = fontSize,
             fontWeight = if (spec.style == KeyStyle.DIGIT) FontWeight.Normal else FontWeight.Medium,
             modifier = if (description != null) {
                 Modifier.clearAndSetSemantics { contentDescription = description }

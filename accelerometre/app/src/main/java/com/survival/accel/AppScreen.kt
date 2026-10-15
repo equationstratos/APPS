@@ -26,6 +26,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,6 +44,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.text.TextStyle
@@ -89,12 +91,24 @@ fun AppScreen() {
     val source: Sensor? = if (withGravity) accelerometer else linearAcceleration ?: accelerometer
     val highPass = !withGravity && linearAcceleration == null
 
+    val view = LocalView.current
+    val measuring = source != null && !frozen
+    DisposableEffect(view, measuring) {
+        view.keepScreenOn = measuring
+        onDispose { view.keepScreenOn = false }
+    }
+
+    // The previous listener stays registered until the next recomposition: events it delivers after a
+    // mode switch or "Figer" must not reach the freshly cleared or frozen state.
+    val subscribedWithGravity = withGravity
     if (sensorManager != null && source != null && !frozen) {
         AccelerationSubscription(
             sensorManager = sensorManager,
             sensor = source,
             highPass = highPass,
-            onSample = state::onSample,
+            onSample = { t, ax, ay, az ->
+                if (!frozen && withGravity == subscribedWithGravity) state.onSample(t, ax, ay, az)
+            },
             onAccuracyChanged = { unreliable = it == SensorManager.SENSOR_STATUS_UNRELIABLE },
             onRegistered = { registrationFailed = !it }
         )

@@ -67,6 +67,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -150,7 +151,10 @@ fun AppScreen() {
 
     val permission = rememberActivityRecognitionPermission(required = mode.usesStepSensor)
     val tracker = remember { StepTracker(sensorManager, mode, store) { steps = it } }
-    TrackStepsWhileResumed(tracker, enabled = mode != TrackingMode.Unavailable && permission.granted)
+    val tracking = mode != TrackingMode.Unavailable && permission.granted
+    TrackStepsWhileResumed(tracker, enabled = tracking)
+    // Fallback sources are unregistered on pause, so a screen timeout would stop the count.
+    KeepScreenOn(active = tracking && mode != TrackingMode.StepCounter)
 
     // Rolls the display over to a new day at midnight even when no step arrives.
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -257,6 +261,15 @@ private fun TrackStepsWhileResumed(tracker: StepTracker, enabled: Boolean) {
             lifecycleOwner.lifecycle.removeObserver(observer)
             tracker.stop()
         }
+    }
+}
+
+@Composable
+private fun KeepScreenOn(active: Boolean) {
+    val view = LocalView.current
+    DisposableEffect(view, active) {
+        view.keepScreenOn = active
+        onDispose { view.keepScreenOn = false }
     }
 }
 
@@ -368,7 +381,7 @@ private fun PanelTitle(text: String, color: Color = Color.White) {
 @Composable
 private fun SensorMissingPanel() {
     Panel(Modifier.fillMaxWidth()) {
-        PanelTitle("Capteur de pas non disponible sur cet appareil", color = Warning)
+        PanelTitle("Capteur de pas non disponible sur cet appareil.", color = Danger)
         Spacer(Modifier.height(8.dp))
         Text(
             "Ce téléphone n'a ni podomètre ni accéléromètre : le comptage des pas est impossible.",
@@ -484,10 +497,12 @@ private fun ModeNote(mode: TrackingMode) {
             "Le téléphone compte vos pas en continu, même application fermée, " +
                 "à partir de la première ouverture de la journée." to TextSecondary
         TrackingMode.StepDetector ->
-            "Détecteur de pas : le comptage n'a lieu que lorsque l'application est ouverte." to Warning
+            "Détecteur de pas : le comptage n'a lieu que lorsque l'application est ouverte ; " +
+                "l'écran reste allumé pendant le comptage." to Warning
         TrackingMode.Accelerometer ->
             "Aucun capteur de pas : comptage approximatif par accéléromètre, uniquement " +
-                "lorsque l'application est ouverte. Gardez le téléphone sur vous." to Warning
+                "lorsque l'application est ouverte. L'écran reste allumé ; " +
+                "gardez le téléphone sur vous." to Warning
         TrackingMode.Unavailable -> return
     }
     Text(text, color = color, fontSize = 13.sp, modifier = Modifier.fillMaxWidth())

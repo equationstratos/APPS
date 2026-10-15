@@ -36,10 +36,16 @@ class VibrationAnalyzer {
     private var gravityY = 0f
     private var gravityZ = 0f
     private var lastTimestampNs = NO_TIMESTAMP
+    private var warmupUntilMs = 0L
 
-    /** Forgets the gravity estimate, e.g. after the sensor was paused and the phone may have moved. */
-    fun restartFilter() {
+    /**
+     * Call when the sensor (re)starts: forgets the gravity estimate (the phone may have moved) and
+     * ignores the first samples, during which sensor fusion and the high-pass produce a transient
+     * that would otherwise be recorded as the peak.
+     */
+    fun restart(nowMs: Long) {
         lastTimestampNs = NO_TIMESTAMP
+        warmupUntilMs = nowMs + WARMUP_MS
     }
 
     fun resetPeak() {
@@ -94,7 +100,7 @@ class VibrationAnalyzer {
     }
 
     private fun add(value: Float, nowMs: Long) {
-        if (!value.isFinite()) return
+        if (!value.isFinite() || nowMs < warmupUntilMs) return
         val id = nowMs / BIN_MS
         val slot = (id % TRACE_SIZE).toInt()
         if (binIds[slot] != id) {
@@ -123,6 +129,7 @@ class VibrationAnalyzer {
 
         private const val GRAVITY_TAU_S = 0.15f
         private const val MAX_DT_S = 0.1f
+        private const val WARMUP_MS = 300L
         private const val NO_BIN = -1L
         private const val NO_TIMESTAMP = Long.MIN_VALUE
     }
