@@ -7,33 +7,34 @@
     <!-- Head -->
     <path
         android:fillColor="#4A9FFF"
-        android:pathData="M47,32a7,7 0 1,1 14,0a7,7 0 1,1 -14,0Z" />
-    <!-- Shoulders and torso -->
+        android:pathData="M46,34a8,8 0 1,1 16,0a8,8 0 1,1 -16,0Z" />
+    <!-- Shoulders -->
     <path
         android:fillColor="#4A9FFF"
-        android:pathData="M41,59V51a9,9 0 0,1 9,-9h8a9,9 0 0,1 9,9V59Z" />
-    <!-- Gauge: low, normal and high zones -->
+        android:pathData="M38,62V57a11,11 0 0,1 11,-11h10a11,11 0 0,1 11,11V62Z" />
+    <!-- Gauge: low and high zones dimmed, healthy zone bright -->
     <path
-        android:pathData="M35,71H41"
+        android:pathData="M34,69H42"
         android:strokeAlpha="0.5"
         android:strokeColor="#4A9FFF"
         android:strokeLineCap="round"
         android:strokeWidth="6" />
     <path
-        android:pathData="M50,71H58"
+        android:pathData="M51,69H57"
         android:strokeColor="#4A9FFF"
         android:strokeLineCap="round"
         android:strokeWidth="6" />
     <path
-        android:pathData="M67,71H73"
+        android:pathData="M66,69H74"
         android:strokeAlpha="0.5"
         android:strokeColor="#4A9FFF"
         android:strokeLineCap="round"
         android:strokeWidth="6" />
-    <!-- Marker -->
+    <!-- Value marker pointing at the healthy zone -->
     <path
-        android:pathData="M56,63V77"
+        android:fillColor="#FFFFFF"
+        android:pathData="M49,80L59,80L54,75Z"
         android:strokeColor="#FFFFFF"
-        android:strokeLineCap="round"
-        android:strokeWidth="3" />
+        android:strokeLineJoin="round"
+        android:strokeWidth="2" />
 </vector>

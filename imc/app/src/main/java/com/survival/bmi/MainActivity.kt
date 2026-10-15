@@ -215,7 +215,13 @@ private fun DecimalField(
         textStyle = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp, fontFeatureSettings = "tnum"),
         label = { Text("$name ($unit)") },
         supportingText = {
-            Text(if (showError) "$name hors limites$NBSP: $limits" else limits.replaceFirstChar { it.uppercase() })
+            Text(
+                when {
+                    !showError -> limits.replaceFirstChar { it.uppercase() }
+                    number == null -> "Saisissez un nombre $limits"
+                    else -> "$name hors limites$NBSP: $limits"
+                }
+            )
         },
         isError = showError,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = imeAction),
@@ -369,7 +375,7 @@ private fun HealthyWeight(category: BmiCategory?, weightKg: Double?, heightM: Do
     val low = HEALTHY_BMI_MIN * heightM * heightM
     val high = HEALTHY_BMI_MAX * heightM * heightM
     Text(
-        "Poids de forme pour votre taille$NBSP: ${formatOneDecimal(low)} – ${formatOneDecimal(high)}$NBSP" + "kg",
+        "Poids de forme pour votre taille$NBSP: ${formatOneDecimal(low)} – ${formatOneDecimal(high)}${NBSP}kg",
         color = Color.White,
         fontSize = 15.sp,
         textAlign = TextAlign.Center,
@@ -378,12 +384,12 @@ private fun HealthyWeight(category: BmiCategory?, weightKg: Double?, heightM: Do
     if (category != null && weightKg != null) {
         val gap = when (category) {
             BmiCategory.Normal -> null
-            BmiCategory.Underweight -> "${formatOneDecimal((low - weightKg).coerceAtLeast(0.1))}${NBSP}kg en dessous"
-            else -> "${formatOneDecimal((weightKg - high).coerceAtLeast(0.1))}${NBSP}kg au-dessus"
+            BmiCategory.Underweight -> "${formatOneDecimal((low - weightKg).coerceAtLeast(0.1))}${NBSP}kg sous le poids de forme"
+            else -> "${formatOneDecimal((weightKg - high).coerceAtLeast(0.1))}${NBSP}kg au-dessus du poids de forme"
         }
         Spacer(Modifier.height(4.dp))
         Text(
-            if (gap == null) "Vous êtes dans la zone de forme" else "Écart$NBSP: $gap",
+            gap ?: "Vous êtes dans la zone de forme",
             color = TextSecondary,
             fontSize = 13.sp,
             textAlign = TextAlign.Center,

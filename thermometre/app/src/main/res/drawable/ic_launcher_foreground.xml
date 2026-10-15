@@ -1,7 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-    <path android:fillColor="#0F3460" android:pathData="M48,24L60,24L60,68L48,68Z" />
-    <path android:fillColor="#0F3460" android:pathData="M54,76m-10,0a10,10 0,1 1,20 0a10,10 0,1 1,-20 0" />
-    <path android:fillColor="#4A9FFF" android:pathData="M52,48L56,48L56,68L52,68Z" />
-    <path android:fillColor="#4A9FFF" android:pathData="M54,76m-7,0a7,7 0,1 1,14 0a7,7 0,1 1,-14 0" />
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group android:translateX="-3">
+        <!-- Glass: rounded tube merging into the bulb -->
+        <path
+            android:fillColor="#0F3460"
+            android:strokeColor="#4A9FFF"
+            android:strokeWidth="5"
+            android:strokeLineJoin="round"
+            android:pathData="M47,60.5 L47,35 A7,7 0 0,1 61,35 L61,60.5 A11,11 0 1,1 47,60.5 Z" />
+        <!-- Liquid column -->
+        <path
+            android:fillColor="#4A9FFF"
+            android:pathData="M52,67 L52,44 A2,2 0 0,1 56,44 L56,67 Z" />
+        <!-- Liquid bulb -->
+        <path
+            android:fillColor="#4A9FFF"
+            android:pathData="M47.5,69 a6.5,6.5 0 1,1 13,0 a6.5,6.5 0 1,1 -13,0 Z" />
+        <!-- Graduations -->
+        <path
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="3"
+            android:strokeLineCap="round"
+            android:pathData="M67,38 L74,38 M67,46 L71,46 M67,54 L74,54" />
+    </group>
 </vector>

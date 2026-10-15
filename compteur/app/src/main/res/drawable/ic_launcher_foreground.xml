@@ -1,6 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-    <path android:fillColor="#0F3460" android:pathData="M54,54m-26,0a26,26 0,1 1,52 0a26,26 0,1 1,-52 0" />
-    <path android:fillColor="#4A9FFF" android:pathData="M48,36L60,36L60,72L48,72Z" />
-    <path android:fillColor="#4A9FFF" android:pathData="M42,42L48,36L48,42Z" />
+<!-- Hand tally counter: plunger on top, round body with a cut-out window showing "+1". -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Plunger button -->
+    <path
+        android:fillColor="#4A9FFF"
+        android:pathData="M49,26H59A3,3 0,0 1,59 32H49A3,3 0,0 1,49 26Z" />
+    <!-- Plunger stem -->
+    <path
+        android:fillColor="#4A9FFF"
+        android:pathData="M51,31H57V39H51Z" />
+    <!-- Body with the display window punched out (evenOdd keeps the monochrome icon readable) -->
+    <path
+        android:fillColor="#4A9FFF"
+        android:fillType="evenOdd"
+        android:pathData="M32,58a22,22 0,1 1,44 0a22,22 0,1 1,-44 0Z M41,47H67A4,4 0,0 1,71 51V61A4,4 0,0 1,67 65H41A4,4 0,0 1,37 61V51A4,4 0,0 1,41 47Z" />
+    <!-- "+" -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:pathData="M44,56H54M49,51V61" />
+    <!-- "1" -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M60.5,53L64,50.5V62" />
 </vector>

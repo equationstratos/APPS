@@ -1,4 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-    <path android:fillColor="#4A9FFF" android:pathData="M30,54L36,40L42,68L48,30L54,78L60,30L66,68L72,40L78,54L78,58L72,58L66,72L60,42L54,82L48,42L42,72L36,58L30,58Z" />
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Recording paper grid -->
+    <path
+        android:pathData="M34,38H74M34,70H74"
+        android:strokeColor="#FF0F3460"
+        android:strokeWidth="3"
+        android:strokeLineCap="round" />
+    <!-- Seismograph trace -->
+    <path
+        android:pathData="M28,54H36L40,47L44,61L49,31L56,77L61,41L65,59L68,51L71,54H80"
+        android:strokeColor="#FF4A9FFF"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <!-- Recording pen tip -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M76.5,54a3.5,3.5 0,1 1,7 0a3.5,3.5 0,1 1,-7 0Z" />
 </vector>

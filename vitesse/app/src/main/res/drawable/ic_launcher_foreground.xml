@@ -1,9 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-    <path android:fillColor="#0F3460" android:pathData="M54,58m-28,0a28,28 0,1 1,56 0a28,28 0,1 1,-56 0" />
-    <path android:fillColor="#1A1A2E" android:pathData="M54,58m-22,0a22,22 0,1 1,44 0a22,22 0,1 1,-44 0" />
-    <path android:fillColor="#4A9FFF" android:pathData="M54,58L40,44L42,42Z" />
-    <path android:fillColor="#4A9FFF" android:pathData="M54,58m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0" />
-    <path android:fillColor="#4A9FFF" android:pathData="M32,60L38,60L38,62L32,62Z" />
-    <path android:fillColor="#4A9FFF" android:pathData="M70,60L76,60L76,62L70,62Z" />
+<!-- Speedometer: 270 degree gauge arc open at the bottom, three graduations, needle near the top end. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Gauge arc, centre (54,56), radius 23, from 135 to 405 degrees -->
+    <path
+        android:pathData="M37.74,72.26 A23,23 0 1,1 70.26,72.26"
+        android:strokeColor="#4A9FFF"
+        android:strokeLineCap="round"
+        android:strokeWidth="6" />
+    <!-- Graduations at 9, 12 and 3 o'clock -->
+    <path
+        android:pathData="M38,56 L42,56 M54,40 L54,44 M70,56 L66,56"
+        android:strokeColor="#4A9FFF"
+        android:strokeLineCap="round"
+        android:strokeWidth="4" />
+    <!-- Needle pointing towards the high end -->
+    <path
+        android:pathData="M54,56 L65.5,43.5"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="round"
+        android:strokeWidth="5" />
+    <!-- Hub -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M48.5,56 a5.5,5.5 0 1,1 11,0 a5.5,5.5 0 1,1 -11,0 Z" />
+    <!-- Readout bar in the open bottom of the gauge -->
+    <path
+        android:pathData="M48,72 L60,72"
+        android:strokeColor="#4A9FFF"
+        android:strokeLineCap="round"
+        android:strokeWidth="5" />
 </vector>

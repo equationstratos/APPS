@@ -5,103 +5,485 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Bundle
+import android.os.SystemClock
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlin.math.abs
-import kotlin.math.sqrt
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
+import java.text.NumberFormat
+import java.util.Locale
+import kotlinx.coroutines.delay
 
-class MainActivity : ComponentActivity(), SensorEventListener {
-    private var sm: SensorManager? = null
-    private val current = mutableFloatStateOf(0f)
-    private val maxV = mutableFloatStateOf(0f)
-    private var lastMag = 9.8f
-    private val alpha = 0.8f
+private val Bg = Color(0xFF1A1A2E)
+private val Card = Color(0xFF16213E)
+private val Navy = Color(0xFF0F3460)
+private val Accent = Color(0xFF4A9FFF)
+private val TextSecondary = Color(0xB3FFFFFF)
+private val Success = Color(0xFF00D084)
+private val Warning = Color(0xFFFFD700)
+private val Danger = Color(0xFFFF6B6B)
 
+private val Tnum = TextStyle(fontFeatureSettings = "tnum")
+
+/** ~30 Hz: smooth graph without flooding Compose with sensor-rate updates. */
+private const val FRAME_INTERVAL_MS = 33L
+
+private val ScaleSteps = floatArrayOf(0.05f, 0.1f, 0.2f, 0.5f, 1f, 2f, 5f, 10f, 20f, 50f, 100f, 200f)
+
+private val ReadingSaver = Saver<Reading?, FloatArray>(
+    save = { it?.toArray() },
+    restore = { Reading.fromArray(it) }
+)
+
+class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        sm = getSystemService(SENSOR_SERVICE) as SensorManager
-        setContent {
-            VibroApp(current.floatValue, maxV.floatValue, onReset = { maxV.floatValue = 0f })
-        }
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+        )
+        setContent { SurvieTheme { AppScreen() } }
     }
-
-    override fun onResume() {
-        super.onResume()
-        sm?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)?.let {
-            sm?.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME)
-        }
-    }
-    override fun onPause() { super.onPause(); sm?.unregisterListener(this) }
-    override fun onSensorChanged(e: SensorEvent) {
-        val mag = sqrt(e.values[0] * e.values[0] + e.values[1] * e.values[1] + e.values[2] * e.values[2])
-        val vibration = abs(mag - lastMag)
-        lastMag = alpha * lastMag + (1 - alpha) * mag
-        current.floatValue = vibration
-        if (vibration > maxV.floatValue) maxV.floatValue = vibration
-    }
-    override fun onAccuracyChanged(s: Sensor?, a: Int) {}
 }
 
 @Composable
-fun VibroApp(current: Float, max: Float, onReset: () -> Unit) {
-    val bg = Color(0xFF1A1A2E)
-    val accent = Color(0xFF4A9FFF)
-    val navy = Color(0xFF0F3460)
+fun SurvieTheme(content: @Composable () -> Unit) {
+    MaterialTheme(
+        colorScheme = darkColorScheme(
+            primary = Accent, onPrimary = Bg,
+            primaryContainer = Navy, onPrimaryContainer = Color.White,
+            secondary = Accent, onSecondary = Bg,
+            secondaryContainer = Navy, onSecondaryContainer = Color.White,
+            background = Bg, onBackground = Color.White,
+            surface = Card, onSurface = Color.White,
+            surfaceVariant = Navy, onSurfaceVariant = TextSecondary,
+            surfaceContainer = Card, surfaceContainerHigh = Card, surfaceContainerHighest = Navy,
+            outline = Navy, outlineVariant = Navy,
+            error = Danger, onError = Bg
+        ),
+        content = content
+    )
+}
 
-    val intensity = when {
-        current < 0.5 -> "Stable"
-        current < 2 -> "Légère"
-        current < 5 -> "Modérée"
-        current < 10 -> "Forte"
-        else -> "Très forte"
+private class VibrationSource(val sensor: Sensor, val removesGravity: Boolean)
+
+private fun findSource(sensorManager: SensorManager): VibrationSource? {
+    sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)?.let {
+        return VibrationSource(it, removesGravity = false)
     }
+    return sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)?.let {
+        VibrationSource(it, removesGravity = true)
+    }
+}
+
+private enum class Intensity(val label: String, val color: Color) {
+    Imperceptible("Imperceptible", Success),
+    VeryLow("Très faible", Success),
+    Low("Faible", Accent),
+    Moderate("Modérée", Warning),
+    Strong("Forte", Danger),
+    VeryStrong("Très forte", Danger);
+
+    companion object {
+        fun of(value: Float): Intensity = when {
+            value < 0.05f -> Imperceptible
+            value < 0.2f -> VeryLow
+            value < 0.5f -> Low
+            value < 1.5f -> Moderate
+            value < 4f -> Strong
+            else -> VeryStrong
+        }
+    }
+}
+
+@Composable
+private fun AppScreen() {
+    val context = LocalContext.current
+    val sensorManager = remember(context) { context.getSystemService(SensorManager::class.java) }
+    val source = remember(sensorManager) { sensorManager?.let { findSource(it) } }
 
     Column(
-        Modifier.fillMaxSize().background(bg).padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        Modifier
+            .fillMaxSize()
+            .background(Bg)
+            .safeDrawingPadding()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
-        Text("Vibromètre", color = accent, fontSize = 28.sp, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(32.dp))
-
-        Box(Modifier.fillMaxWidth().background(navy, RoundedCornerShape(16.dp)).padding(24.dp)) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                Text("%.2f".format(current), color = accent, fontSize = 64.sp, fontWeight = FontWeight.Bold)
-                Text("m/s²", color = Color.White, fontSize = 16.sp)
-                Spacer(Modifier.height(16.dp))
-                Text(intensity, color = accent, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
-            }
-        }
-
-        Spacer(Modifier.height(24.dp))
-
-        val norm = (current / 15f).coerceIn(0f, 1f)
-        Box(Modifier.fillMaxWidth().height(20.dp).background(navy, RoundedCornerShape(10.dp))) {
-            Box(Modifier.fillMaxWidth(norm).fillMaxHeight().background(accent, RoundedCornerShape(10.dp)))
-        }
-
-        Spacer(Modifier.height(24.dp))
-
-        Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
-            Text("Pic max: %.2f m/s²".format(max), color = Color.White, fontSize = 14.sp)
-            Box(Modifier.background(accent, RoundedCornerShape(8.dp))
-                .clickable { onReset() }.padding(horizontal = 16.dp, vertical = 6.dp)) {
-                Text("Reset", color = bg, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+        Text("Vibromètre", color = Accent, fontSize = 26.sp, fontWeight = FontWeight.Bold)
+        Text(
+            "Posez le téléphone à plat sur la surface à mesurer",
+            color = TextSecondary,
+            fontSize = 14.sp
+        )
+        Spacer(Modifier.height(16.dp))
+        if (sensorManager != null && source != null) {
+            Vibrometer(sensorManager, source)
+        } else {
+            Panel {
+                Text(
+                    "Accéléromètre non disponible sur cet appareil",
+                    color = Danger,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "La mesure des vibrations nécessite un accéléromètre.",
+                    color = TextSecondary,
+                    fontSize = 14.sp
+                )
             }
         }
     }
+}
+
+@Composable
+private fun Vibrometer(sensorManager: SensorManager, source: VibrationSource) {
+    val analyzer = remember { VibrationAnalyzer() }
+    var live by remember { mutableStateOf(Reading.Empty) }
+    var frozen by rememberSaveable(stateSaver = ReadingSaver) { mutableStateOf<Reading?>(null) }
+    var accuracy by remember { mutableIntStateOf(SensorManager.SENSOR_STATUS_ACCURACY_HIGH) }
+    var sensorStarted by remember { mutableStateOf(true) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    DisposableEffect(lifecycleOwner, sensorManager, source) {
+        val listener = object : SensorEventListener {
+            override fun onSensorChanged(event: SensorEvent) {
+                val values = event.values
+                if (values.size < 3) return
+                val now = SystemClock.elapsedRealtime()
+                if (source.removesGravity) {
+                    analyzer.addRaw(values[0], values[1], values[2], event.timestamp, now)
+                } else {
+                    analyzer.addLinear(values[0], values[1], values[2], now)
+                }
+            }
+
+            override fun onAccuracyChanged(sensor: Sensor?, newAccuracy: Int) {
+                accuracy = newAccuracy
+            }
+        }
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> {
+                    analyzer.restartFilter()
+                    sensorStarted = sensorManager.registerListener(
+                        listener,
+                        source.sensor,
+                        SensorManager.SENSOR_DELAY_GAME
+                    )
+                }
+                Lifecycle.Event.ON_PAUSE -> sensorManager.unregisterListener(listener)
+                else -> Unit
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            sensorManager.unregisterListener(listener)
+        }
+    }
+
+    LaunchedEffect(lifecycleOwner, analyzer) {
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            while (true) {
+                live = analyzer.read(SystemClock.elapsedRealtime())
+                delay(FRAME_INTERVAL_MS)
+            }
+        }
+    }
+
+    val view = LocalView.current
+    DisposableEffect(view) {
+        view.keepScreenOn = true
+        onDispose { view.keepScreenOn = false }
+    }
+
+    val reading = frozen ?: live
+
+    Readout(reading)
+    Spacer(Modifier.height(12.dp))
+    Seismograph(reading.trace, isFrozen = frozen != null)
+    Spacer(Modifier.height(12.dp))
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Button(
+            onClick = {
+                frozen = if (frozen == null) analyzer.read(SystemClock.elapsedRealtime()) else null
+            },
+            modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = Bg)
+        ) {
+            Text(if (frozen == null) "Figer" else "Reprendre", fontWeight = FontWeight.Bold)
+        }
+        Button(
+            onClick = {
+                analyzer.resetPeak()
+                live = live.withPeak(0f)
+                frozen = frozen?.withPeak(0f)
+            },
+            modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Navy, contentColor = Color.White)
+        ) {
+            Text("Effacer le pic")
+        }
+    }
+
+    if (!sensorStarted) {
+        Note(
+            "Impossible de démarrer l'accéléromètre. Fermez les applications qui l'utilisent puis revenez.",
+            Danger
+        )
+    }
+    if (accuracy == SensorManager.SENSOR_STATUS_UNRELIABLE) {
+        Note("Capteur peu fiable pour le moment : valeurs indicatives.", Warning)
+    }
+    if (source.removesGravity) {
+        Note(
+            "Capteur d'accélération linéaire absent : la gravité est retirée par calcul.",
+            TextSecondary
+        )
+    }
+}
+
+@Composable
+private fun Panel(content: @Composable ColumnScope.() -> Unit) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .background(Card, RoundedCornerShape(16.dp))
+            .padding(16.dp),
+        content = content
+    )
+}
+
+@Composable
+private fun Readout(reading: Reading) {
+    Panel {
+        Text("Accélération actuelle", color = TextSecondary, fontSize = 14.sp)
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(
+                formatAccel(reading.current),
+                color = Color.White,
+                fontSize = 52.sp,
+                fontWeight = FontWeight.Bold,
+                style = Tnum,
+                modifier = Modifier.alignByBaseline()
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                "m/s²",
+                color = TextSecondary,
+                fontSize = 18.sp,
+                modifier = Modifier.alignByBaseline()
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+        Text("Intensité (RMS sur 1 s)", color = TextSecondary, fontSize = 13.sp)
+        Spacer(Modifier.height(6.dp))
+        IntensityBadge(Intensity.of(reading.rms))
+        Spacer(Modifier.height(16.dp))
+        Row(Modifier.fillMaxWidth()) {
+            Stat("Pic", reading.peak, Modifier.weight(1f))
+            Stat("RMS sur 1 s", reading.rms, Modifier.weight(1f))
+        }
+    }
+}
+
+@Composable
+private fun IntensityBadge(intensity: Intensity) {
+    Row(
+        Modifier
+            .background(intensity.color.copy(alpha = 0.16f), RoundedCornerShape(50))
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(Modifier.size(10.dp).background(intensity.color, CircleShape))
+        Spacer(Modifier.width(8.dp))
+        Text(
+            intensity.label,
+            color = intensity.color,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.SemiBold
+        )
+    }
+}
+
+@Composable
+private fun Stat(label: String, value: Float, modifier: Modifier) {
+    Column(modifier) {
+        Text(label, color = TextSecondary, fontSize = 13.sp)
+        Text(
+            "${formatAccel(value)} m/s²",
+            color = Color.White,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.SemiBold,
+            style = Tnum
+        )
+    }
+}
+
+@Composable
+private fun Seismograph(trace: FloatArray, isFrozen: Boolean) {
+    val scale = scaleFor(trace)
+    val scaleFormat = remember {
+        NumberFormat.getNumberInstance(Locale.FRANCE).apply { maximumFractionDigits = 2 }
+    }
+    Panel {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "Sismogramme",
+                color = Color.White,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.weight(1f)
+            )
+            if (isFrozen) {
+                Text(
+                    "Figé",
+                    color = Bg,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .background(Warning, RoundedCornerShape(50))
+                        .padding(horizontal = 10.dp, vertical = 2.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+            }
+            Text(
+                "± ${scaleFormat.format(scale.toDouble())} m/s²",
+                color = TextSecondary,
+                fontSize = 13.sp,
+                style = Tnum
+            )
+        }
+        Spacer(Modifier.height(12.dp))
+        Canvas(
+            Modifier
+                .fillMaxWidth()
+                .height(150.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(Bg)
+        ) {
+            val centerY = size.height / 2f
+            val amplitude = centerY - 4.dp.toPx()
+            val gridStroke = 1.dp.toPx()
+            for (fraction in floatArrayOf(-1f, -0.5f, 0.5f, 1f)) {
+                val y = centerY + fraction * amplitude
+                drawLine(Navy, Offset(0f, y), Offset(size.width, y), strokeWidth = gridStroke)
+            }
+            drawLine(
+                TextSecondary.copy(alpha = 0.35f),
+                Offset(0f, centerY),
+                Offset(size.width, centerY),
+                strokeWidth = gridStroke
+            )
+            if (trace.size < 2) return@Canvas
+
+            val step = size.width / (trace.size - 1)
+            val heights = FloatArray(trace.size) { (trace[it] / scale).coerceIn(0f, 1f) * amplitude }
+            val top = Path()
+            val bottom = Path()
+            val envelope = Path()
+            for (i in trace.indices) {
+                val x = i * step
+                if (i == 0) {
+                    top.moveTo(x, centerY - heights[i])
+                    bottom.moveTo(x, centerY + heights[i])
+                    envelope.moveTo(x, centerY - heights[i])
+                } else {
+                    top.lineTo(x, centerY - heights[i])
+                    bottom.lineTo(x, centerY + heights[i])
+                    envelope.lineTo(x, centerY - heights[i])
+                }
+            }
+            for (i in trace.indices.reversed()) {
+                envelope.lineTo(i * step, centerY + heights[i])
+            }
+            envelope.close()
+
+            val outline = Stroke(width = 1.5.dp.toPx(), join = StrokeJoin.Round)
+            drawPath(envelope, Accent.copy(alpha = 0.3f))
+            drawPath(top, Accent, style = outline)
+            drawPath(bottom, Accent, style = outline)
+        }
+        Spacer(Modifier.height(6.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text("−10 s", color = TextSecondary, fontSize = 12.sp)
+            Text("maintenant", color = TextSecondary, fontSize = 12.sp)
+        }
+    }
+}
+
+@Composable
+private fun Note(text: String, color: Color) {
+    Spacer(Modifier.height(12.dp))
+    Text(text, color = color, fontSize = 13.sp)
+}
+
+/** Smallest "round" full-scale value that fits the trace, so the axis does not jitter every frame. */
+private fun scaleFor(trace: FloatArray): Float {
+    val target = (trace.maxOrNull() ?: 0f) * 1.1f
+    return ScaleSteps.firstOrNull { it >= target } ?: target
+}
+
+private fun formatAccel(value: Float): String = when {
+    !value.isFinite() -> "—"
+    value < 10f -> String.format(Locale.FRANCE, "%.3f", value)
+    else -> String.format(Locale.FRANCE, "%.2f", value)
 }

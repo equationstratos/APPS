@@ -1,7 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-    <path android:fillColor="#0F3460" android:pathData="M22,70L86,70Q86,38 54,38Q22,38 22,70Z" />
-    <path android:fillColor="#1A1A2E" android:pathData="M30,70L78,70Q78,46 54,46Q30,46 30,70Z" />
-    <path android:fillColor="#4A9FFF" android:pathData="M54,70L54,38L56,38L56,70Z" />
-    <path android:fillColor="#4A9FFF" android:pathData="M54,70L80,56L82,60Z" />
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Protractor body: semicircle on a straight base, with the centre notch cut out -->
+    <path
+        android:fillColor="#4A9FFF"
+        android:fillType="evenOdd"
+        android:pathData="M28,61 L30,61 A24,24 0 0,1 78,61 L80,61 L80,64 A2,2 0 0,1 78,66 L30,66 A2,2 0 0,1 28,64 Z M47,61 A7,7 0 0,1 61,61 Z" />
+    <!-- Graduations every 30 degrees -->
+    <path
+        android:strokeColor="#0F3460"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M66.99,53.5 L72.19,50.5 M61.5,48.01 L64.5,42.81 M54,46 L54,40 M46.5,48.01 L43.5,42.81 M41.01,53.5 L35.81,50.5" />
+    <!-- Needle -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="4.5"
+        android:strokeLineCap="round"
+        android:pathData="M54,61 L74.5,40.5" />
+    <!-- Pivot -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M50,61 a4,4 0 1,1 8,0 a4,4 0 1,1 -8,0 Z" />
 </vector>

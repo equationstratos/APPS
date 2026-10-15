@@ -1,7 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-    <path android:fillColor="#0F3460" android:pathData="M54,54m-30,0a30,30 0,1 1,60 0a30,30 0,1 1,-60 0" />
-    <path android:fillColor="#4A9FFF" android:pathData="M50,54L50,30L54,30L54,54Z" />
-    <path android:fillColor="#4A9FFF" android:pathData="M54,54L72,46L72,50Z" />
-    <path android:fillColor="#1A1A2E" android:pathData="M54,54m-4,0a4,4 0,1 1,8 0a4,4 0,1 1,-8 0" />
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Globe body -->
+    <path
+        android:fillColor="#0F3460"
+        android:pathData="M28,54 a26,26 0 1,1 52,0 a26,26 0 1,1 -52,0 Z" />
+    <!-- Meridian -->
+    <path
+        android:strokeColor="#4A9FFF"
+        android:strokeWidth="4"
+        android:pathData="M41,54 a13,26 0 1,1 26,0 a13,26 0 1,1 -26,0 Z" />
+    <!-- Equator -->
+    <path
+        android:strokeColor="#4A9FFF"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M29,54 H79" />
+    <!-- Globe outline -->
+    <path
+        android:strokeColor="#4A9FFF"
+        android:strokeWidth="5"
+        android:pathData="M28,54 a26,26 0 1,1 52,0 a26,26 0 1,1 -52,0 Z" />
+    <!-- Clock hands: navy halo then white hands -->
+    <path
+        android:strokeColor="#0F3460"
+        android:strokeWidth="10"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M54,37 L54,54 L63,59" />
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M54,37 L54,54 L63,59" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M49.5,54 a4.5,4.5 0 1,1 9,0 a4.5,4.5 0 1,1 -9,0 Z" />
 </vector>
