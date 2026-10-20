@@ -1,0 +1,110 @@
+package com.survival.pulse
+
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+
+/** Number of measurements kept. */
+internal const val HISTORY_SIZE = 20
+
+internal enum class MeasureContext(val key: String, val label: String) {
+    NONE("aucun", "Non précisé"),
+    REST("repos", "Au repos"),
+    EFFORT("effort", "Après effort");
+
+    companion object {
+        fun fromKey(key: String?): MeasureContext? = entries.firstOrNull { it.key == key }
+    }
+}
+
+internal enum class MeasureMethod(val key: String, val label: String) {
+    CAMERA("camera", "Caméra"),
+    MANUAL("manuel", "Manuel");
+
+    companion object {
+        fun fromKey(key: String?): MeasureMethod? = entries.firstOrNull { it.key == key }
+    }
+}
+
+/** One saved measurement; [timeMs] (epoch milliseconds) doubles as its identifier. */
+internal data class HistoryEntry(
+    val timeMs: Long,
+    val bpm: Int,
+    val context: MeasureContext,
+    val method: MeasureMethod,
+)
+
+/**
+ * Plain-text storage format, one entry per line: "timeMs;bpm;context;method".
+ * Unreadable lines are skipped, so a damaged value never prevents the app from starting.
+ */
+internal object HistoryCodec {
+    private const val SEPARATOR = ";"
+
+    fun encode(entries: List<HistoryEntry>): String = entries.joinToString("\n") {
+        listOf(it.timeMs.toString(), it.bpm.toString(), it.context.key, it.method.key).joinToString(SEPARATOR)
+    }
+
+    fun decode(text: String?): List<HistoryEntry> {
+        if (text.isNullOrBlank()) return emptyList()
+        val entries = text.lineSequence().mapNotNull { line ->
+            val parts = line.trim().split(SEPARATOR)
+            if (parts.size != 4) return@mapNotNull null
+            val time = parts[0].toLongOrNull()?.takeIf { it > 0L } ?: return@mapNotNull null
+            val bpm = parts[1].toIntOrNull()?.takeIf { it in 20..300 } ?: return@mapNotNull null
+            val context = MeasureContext.fromKey(parts[2]) ?: return@mapNotNull null
+            val method = MeasureMethod.fromKey(parts[3]) ?: return@mapNotNull null
+            HistoryEntry(time, bpm, context, method)
+        }.toList()
+        return entries.distinctBy { it.timeMs }.sortedByDescending { it.timeMs }.take(HISTORY_SIZE)
+    }
+}
+
+/** [timeMs], moved forward by a few milliseconds if an entry already uses it as identifier. */
+internal fun List<HistoryEntry>.freeTime(timeMs: Long): Long {
+    var time = timeMs
+    while (any { it.timeMs == time }) time++
+    return time
+}
+
+/** Adds [entry] first (newest first), keeping identifiers unique and at most [HISTORY_SIZE] entries. */
+internal fun List<HistoryEntry>.plusEntry(entry: HistoryEntry): List<HistoryEntry> =
+    (listOf(entry.copy(timeMs = freeTime(entry.timeMs))) + this).sortedByDescending { it.timeMs }.take(HISTORY_SIZE)
+
+internal fun List<HistoryEntry>.withContext(timeMs: Long, context: MeasureContext): List<HistoryEntry> =
+    map { if (it.timeMs == timeMs) it.copy(context = context) else it }
+
+internal fun List<HistoryEntry>.without(timeMs: Long): List<HistoryEntry> = filterNot { it.timeMs == timeMs }
+
+private val DateFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.FRANCE)
+private val TimeFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.FRANCE)
+
+/** "Aujourd'hui à 14:05", "Hier à 09:12" or "12/10/2026 à 08:30" (24 h clock). */
+internal fun formatEntryDate(timeMs: Long, nowMs: Long, zone: ZoneId): String {
+    val moment = Instant.ofEpochMilli(timeMs).atZone(zone)
+    val day = moment.toLocalDate()
+    val today = Instant.ofEpochMilli(nowMs).atZone(zone).toLocalDate()
+    val dayText = when (day) {
+        today -> "Aujourd'hui"
+        today.minusDays(1) -> "Hier"
+        else -> day.format(DateFormat)
+    }
+    return "$dayText à ${moment.format(TimeFormat)}"
+}
+
+/** Clock time only, for accessibility labels ("14:05"). */
+internal fun formatEntryTime(timeMs: Long, zone: ZoneId): String =
+    Instant.ofEpochMilli(timeMs).atZone(zone).format(TimeFormat)
+
+/** Date used in spoken labels, e.g. "le 12/10/2026". */
+internal fun spokenDay(timeMs: Long, nowMs: Long, zone: ZoneId): String {
+    val day: LocalDate = Instant.ofEpochMilli(timeMs).atZone(zone).toLocalDate()
+    val today = Instant.ofEpochMilli(nowMs).atZone(zone).toLocalDate()
+    return when (day) {
+        today -> "aujourd'hui"
+        today.minusDays(1) -> "hier"
+        else -> "le " + day.format(DateFormat)
+    }
+}

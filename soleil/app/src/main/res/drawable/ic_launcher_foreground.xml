@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sun with rays at the upper left, crescent Moon lit on the side facing the Sun, a small star. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Sun disc: centre (46,49), radius 10 -->
+    <path
+        android:fillColor="#4A9FFF"
+        android:pathData="M36,49 a10,10 0 1,1 20,0 a10,10 0 1,1 -20,0 Z" />
+    <!-- Seven rays from radius 14 to 18 (none towards the Moon) -->
+    <path
+        android:pathData="M46,35 L46,31 M55.9,39.1 L58.73,36.27 M60,49 L64,49 M46,63 L46,67 M36.1,58.9 L33.27,61.73 M32,49 L28,49 M36.1,39.1 L33.27,36.27"
+        android:strokeColor="#4A9FFF"
+        android:strokeLineCap="round"
+        android:strokeWidth="3.4" />
+    <!-- Crescent: circle (66,66) r 12 minus circle (70.72,70.02) r 11 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M76.85,60.88 A12,12 0 1,0 62.7,77.54 A11,11 0 0,1 76.85,60.88 Z" />
+    <!-- Four-pointed star -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M77,37.8 L77.85,41.15 L81.2,42 L77.85,42.85 L77,46.2 L76.15,42.85 L72.8,42 L76.15,41.15 Z" />
+</vector>
