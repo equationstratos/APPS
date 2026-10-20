@@ -321,3 +321,54 @@ fun Library.sanitized(): Library {
     }
     return Library(renumbered, next)
 }
+
+
+// ---------- Helpers for the screens ----------
+
+fun Checklist.findItem(itemId: Long): CheckItem? {
+    for (s in sections) for (i in s.items) if (i.id == itemId) return i
+    return null
+}
+
+fun Checklist.findSection(sectionId: Long): Section? = sections.firstOrNull { it.id == sectionId }
+
+fun Checklist.sectionTitleTaken(title: String, exceptSectionId: Long? = null): Boolean {
+    val key = textKey(title)
+    return sections.any { it.id != exceptSectionId && textKey(it.title) == key }
+}
+
+fun Library.nameTaken(name: String, exceptListId: Long? = null): Boolean {
+    val key = textKey(name)
+    return lists.any { it.id != exceptListId && textKey(it.name) == key }
+}
+
+/** Items shown in normal mode: checked ones are left out when the list hides them. */
+fun Section.visibleItems(hideChecked: Boolean): List<CheckItem> =
+    if (hideChecked) items.filter { !it.checked } else items
+
+/** Ids of the checked items, kept to undo « Tout décocher ». */
+fun Checklist.checkedIds(): Set<Long> {
+    val ids = HashSet<Long>()
+    for (s in sections) for (i in s.items) if (i.checked) ids += i.id
+    return ids
+}
+
+/** Checks again the items listed in [ids]; ids that no longer exist are ignored. */
+fun Checklist.recheck(ids: Set<Long>): Checklist =
+    if (ids.isEmpty()) this else mapItems { if (!it.checked && it.id in ids) it.copy(checked = true) else it }
+
+/** "Aucun article" or "2/4 · 50 %" (no-break space before the percent sign). */
+fun progressLabel(p: Progress): String =
+    if (p.total <= 0) "Aucun article" else "${p.done}/${p.total} · ${p.percent} %"
+
+/** French quotation marks with no-break spaces: « texte ». */
+fun quoted(text: String): String = "« $text »"
+
+fun uncheckMessage(done: Int): String = when {
+    done <= 0 -> "Aucun article n'est coché."
+    done == 1 -> "1 article est coché ; il sera décoché pour réutiliser la liste."
+    else -> "$done articles sont cochés ; ils seront tous décochés pour réutiliser la liste."
+}
+
+/** "son article" or "ses 3 articles", for « La liste X et … seront supprimés. » */
+fun itemsPhrase(n: Int): String = if (n <= 1) "son article" else "ses $n articles"

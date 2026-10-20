@@ -36,9 +36,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -151,12 +154,31 @@ internal fun Segmented(options: List<String>, selectedIndex: Int, onSelect: (Int
     }
 }
 
-/** Label above a large tabular value. */
+/**
+ * Label above a large tabular value. The unit after the last no-break space ("1 013,2 hPa") is drawn
+ * smaller, so the widest values still fit half the width of a 360 dp screen.
+ */
 @Composable
 internal fun ValueCell(label: String, value: String, modifier: Modifier = Modifier, valueColor: Color = Color.White) {
+    val number = value.substringBeforeLast(NBSP)
+    val unit = if (number.length < value.length) value.substring(number.length + 1) else ""
     Column(modifier) {
         Text(label, color = TextSecondary, fontSize = 13.sp)
-        Text(value, color = valueColor, fontSize = 24.sp, fontWeight = FontWeight.SemiBold, style = Tabular, maxLines = 1)
+        Text(
+            buildAnnotatedString {
+                append(number)
+                if (unit.isNotEmpty()) {
+                    withStyle(SpanStyle(color = TextSecondary, fontSize = 15.sp, fontWeight = FontWeight.Normal)) {
+                        append("$NBSP$unit")
+                    }
+                }
+            },
+            color = valueColor,
+            fontSize = 24.sp,
+            fontWeight = FontWeight.SemiBold,
+            style = Tabular,
+            maxLines = 1,
+        )
     }
 }
 

@@ -231,6 +231,7 @@ internal fun limit(value: TextFieldValue, max: Int): TextFieldValue =
 /**
  * Single text field dialog (rename a list or a section, edit an item).
  * [validate] returns an error message for a non-empty cleaned value, or null when it is acceptable.
+ * [onDelete], when given, adds a « Supprimer » button next to « Annuler ».
  */
 @Composable
 internal fun TextInputDialog(
@@ -241,7 +242,9 @@ internal fun TextInputDialog(
     maxLength: Int,
     onConfirm: (String) -> Unit,
     onDismiss: () -> Unit,
-    validate: (String) -> String? = { null }
+    validate: (String) -> String? = { null },
+    singleLine: Boolean = true,
+    onDelete: (() -> Unit)? = null
 ) {
     var value by rememberSaveable(stateSaver = TextFieldValue.Saver) {
         mutableStateOf(TextFieldValue(initial, TextRange(initial.length)))
@@ -250,14 +253,20 @@ internal fun TextInputDialog(
     val error = if (clean.isEmpty()) null else validate(clean)
     val canConfirm = clean.isNotEmpty() && error == null
     val focus = remember { FocusRequester() }
-    LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(onClick = { if (canConfirm) onConfirm(clean) }, enabled = canConfirm) { Text(confirmLabel) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Annuler") } },
+        dismissButton = {
+            Row {
+                if (onDelete != null) {
+                    TextButton(onClick = onDelete) { Text("Supprimer", color = Danger) }
+                }
+                TextButton(onClick = onDismiss) { Text("Annuler") }
+            }
+        },
         title = { Text(title) },
         text = {
             OutlinedTextField(
@@ -270,7 +279,8 @@ internal fun TextInputDialog(
                 } else {
                     null
                 },
-                singleLine = true,
+                singleLine = singleLine,
+                maxLines = if (singleLine) 1 else 4,
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.Sentences,
                     imeAction = ImeAction.Done
@@ -281,6 +291,8 @@ internal fun TextInputDialog(
                     .fillMaxWidth()
                     .focusRequester(focus)
             )
+            // Inside the dialog's own composition, so the field is attached when focus is requested.
+            LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
         }
     )
 }

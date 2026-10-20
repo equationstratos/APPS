@@ -29,6 +29,7 @@ object Templates {
             sources = listOf(
                 "guide « Tous responsables » (SGDSN, 2025)",
                 "info.gouv.fr, « Se préparer à une situation d'urgence »",
+                "Sécurité civile (ministère de l'Intérieur), « Kit d'urgence »",
                 "ministère de la Transition écologique et Géorisques, kit d'urgence 72 h"
             ),
             sections = listOf(
@@ -76,7 +77,7 @@ object Templates {
                 ),
                 section(
                     "Entretien",
-                    "Kit vérifié : dates de péremption et piles (2 fois par an)"
+                    "Contenu et dates de péremption vérifiés (au moins 1 fois par an)"
                 )
             )
         ),
@@ -168,6 +169,7 @@ object Templates {
             summary = "Les bons réflexes avant, pendant et après une inondation.",
             sources = listOf(
                 "Géorisques, « Que faire en cas d'inondation ? »",
+                "Sécurité civile (ministère de l'Intérieur), « Inondation »",
                 "ministère de la Transition écologique, « Pluie-inondation : ayons les bons réflexes »",
                 "vigilance Météo-France et Vigicrues"
             ),
@@ -177,8 +179,9 @@ object Templates {
                     "Suivre la vigilance Météo-France et Vigicrues",
                     "Préparer le kit d'urgence 72 h",
                     "Repérer où couper le gaz et l'électricité",
-                    "Monter meubles et objets à l'étage",
-                    "Garer la voiture au garage ou l'attacher"
+                    "Mettre hors d'eau meubles et objets de valeur",
+                    "Boucher les entrées d'eau (portes, soupiraux)",
+                    "Repérer un espace refuge en hauteur"
                 ),
                 section(
                     "Pendant",
@@ -195,7 +198,9 @@ object Templates {
                     "Après",
                     "Attendre l'autorisation avant de rétablir gaz et électricité",
                     "Ne rétablir l'électricité que sur une installation sèche",
-                    "Ne pas boire l'eau du robinet avant l'accord des autorités"
+                    "Ne pas boire l'eau du robinet avant l'accord des autorités",
+                    "Aérer et désinfecter les pièces",
+                    "Faire l'inventaire des dégâts pour l'assureur"
                 )
             )
         ),
@@ -205,7 +210,8 @@ object Templates {
             summary = "Équipements et vérifications avant de prendre la route en hiver.",
             sources = listOf(
                 "Bison Futé, « La conduite en hiver »",
-                "Sécurité routière, équipement de la voiture",
+                "Sécurité routière, « Préparer son départ »",
+                "info.gouv.fr, « Les bons réflexes à adopter sur la route cet hiver »",
                 "ministère de la Transition écologique, « En hiver : les bons réflexes »"
             ),
             sections = listOf(
@@ -213,7 +219,7 @@ object Templates {
                     "Équipements obligatoires",
                     "Gilet haute visibilité à portée de main",
                     "Triangle de présignalisation",
-                    "Pneus hiver ou chaînes en zone de montagne (1er novembre – 31 mars)"
+                    "Loi Montagne (1er novembre – 31 mars, communes concernées) : 4 pneus hiver, ou chaînes ou chaussettes à neige à bord"
                 ),
                 section(
                     "Kit hiver",
@@ -244,7 +250,8 @@ object Templates {
             sections = listOf(
                 section(
                     "Protection",
-                    "Gants jetables sans latex"
+                    "Gants jetables sans latex",
+                    "Masque de protection"
                 ),
                 section(
                     "Plaies et brûlures",
@@ -260,18 +267,19 @@ object Templates {
                 section(
                     "Urgences",
                     "Coussin hémostatique",
+                    "Compresses froides instantanées",
                     "Couverture de survie"
                 ),
                 section(
                     "Instruments",
-                    "Ciseaux",
+                    "Ciseaux à bouts ronds",
                     "Pince à épiler",
                     "Épingles de sûreté",
                     "Thermomètre"
                 ),
                 section(
                     "Entretien",
-                    "Dates de péremption vérifiées (1 fois par an)"
+                    "Dates de péremption vérifiées régulièrement"
                 )
             )
         ),
@@ -281,7 +289,7 @@ object Templates {
             summary = "Préparer sa sortie et son sac pour randonner en sécurité.",
             sources = listOf(
                 "ministère des Sports, « Sortir en montagne »",
-                "FFRandonnée, recommandations de sécurité",
+                "FFRandonnée, recommandations de sécurité et sac à dos",
                 "Croix-Rouge française, trousse de secours de randonnée"
             ),
             sections = listOf(

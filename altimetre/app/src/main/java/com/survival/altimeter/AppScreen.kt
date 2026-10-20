@@ -92,7 +92,7 @@ fun AppScreen() {
 @Composable
 private fun Header() {
     Column {
-        Text("Altimètre", color = Accent, fontSize = 26.sp, fontWeight = FontWeight.Bold)
+        Text("Altimètre", color = Accent, fontSize = 26.sp, lineHeight = 32.sp, fontWeight = FontWeight.Bold)
         Text("Altitude et baromètre hors ligne", color = TextSecondary, fontSize = 14.sp)
     }
 }
@@ -408,6 +408,7 @@ private fun DecimalField(
     error: String?,
     onDone: () -> Unit,
 ) {
+    val errorText: @Composable () -> Unit = { Text(error.orEmpty()) }
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
@@ -416,11 +417,7 @@ private fun DecimalField(
         placeholder = { Text(placeholder) },
         singleLine = true,
         isError = error != null,
-        supportingText = if (error != null) {
-            { Text(error) }
-        } else {
-            null
-        },
+        supportingText = if (error != null) errorText else null,
         textStyle = Tabular.copy(fontSize = 18.sp),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
         keyboardActions = KeyboardActions(onDone = { onDone() }),
@@ -533,14 +530,11 @@ private fun BarometerCard(state: AltimeterState, tendency: TendencyStatus, unit:
             )
         }
         if (change1h != null || change24h != null) {
-            Spacer(Modifier.height(8.dp))
-            Text(
-                "Sur 1${NBSP}h$NBSP: ${change1h?.let { formatHpaChange(it) } ?: NO_VALUE}   ·   " +
-                    "sur 24${NBSP}h$NBSP: ${change24h?.let { formatHpaChange(it) } ?: NO_VALUE}",
-                color = TextSecondary,
-                fontSize = 14.sp,
-                style = Tabular,
-            )
+            Spacer(Modifier.height(12.dp))
+            Row(Modifier.fillMaxWidth()) {
+                ValueCell("Variation sur 1${NBSP}h", change1h?.let { formatHpaChange(it) } ?: NO_VALUE, Modifier.weight(1f))
+                ValueCell("Variation sur 24${NBSP}h", change24h?.let { formatHpaChange(it) } ?: NO_VALUE, Modifier.weight(1f))
+            }
         }
         Spacer(Modifier.height(8.dp))
         val perHpa = if (station.isFinite()) metersPerHpa(station, state.calibration.referenceHpa) else 8.3

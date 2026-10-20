@@ -64,6 +64,10 @@ internal fun GpsAltitudePanel(
 ) {
     val context = LocalContext.current
     val locationManager = remember(context) { context.getSystemService(LocationManager::class.java) }
+    // Listing the providers needs no permission: a phone without GPS is never asked for its location.
+    val hasGps = remember(locationManager) {
+        locationManager?.allProviders?.contains(LocationManager.GPS_PROVIDER) == true
+    }
     val geoid by produceState<Geoid?>(initialValue = null, context) {
         value = withContext(Dispatchers.IO) { loadGeoid(context) }
     }
@@ -76,7 +80,7 @@ internal fun GpsAltitudePanel(
         access = context.readLocationAccess()
     }
     LaunchedEffect(Unit) {
-        if (autoRequest && !access.precise && !autoRequested) {
+        if (autoRequest && hasGps && !access.precise && !autoRequested) {
             autoRequested = true
             launcher.launch(LOCATION_PERMISSIONS)
         }
@@ -134,8 +138,8 @@ internal fun GpsAltitudePanel(
 
     Column(Modifier.fillMaxWidth()) {
         when {
-            locationManager == null || startResult == GpsStart.NO_GPS ->
-                PanelMessage("Cet appareil n'a pas de GPS : l'altitude GPS n'est pas disponible.")
+            locationManager == null || !hasGps || startResult == GpsStart.NO_GPS ->
+                PanelMessage("Cet appareil n'a pas de GPS$NBSP: l'altitude GPS n'est pas disponible.")
 
             !access.precise || startResult == GpsStart.DENIED -> {
                 PanelMessage(
@@ -144,7 +148,7 @@ internal fun GpsAltitudePanel(
                             "Seule la position approximative est autorisée$NBSP: elle ne donne pas l'altitude. " +
                                 "Autorisez la position exacte. Elle sert uniquement sur l'appareil, rien n'est envoyé."
                         permanentlyDenied ->
-                            "L'accès à la position a été refusé. Autorisez « Position » (position exacte) dans les " +
+                            "L'accès à la position a été refusé. Autorisez la position exacte dans les " +
                                 "paramètres de l'application pour utiliser l'altitude GPS."
                         else ->
                             "L'altitude GPS nécessite l'accès à la position exacte. Elle sert uniquement sur " +
