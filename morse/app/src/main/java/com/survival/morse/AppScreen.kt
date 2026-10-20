@@ -22,6 +22,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,6 +56,10 @@ fun AppScreen() {
     val prefs = remember(context) { MorsePrefs(context.applicationContext) }
     val flash = remember { ScreenFlash() }
     var tab by rememberSaveable { mutableIntStateOf(0) }
+    // Each tab keeps its saved state (decoded text, message, scroll) while another tab is shown.
+    val tabStates = rememberSaveableStateHolder()
+    // The Koch session (level, score, recent answers) also survives a visit to another tab.
+    val trainer = remember(prefs) { KochTrainer(prefs.kochLevel) }
 
     Box(
         Modifier
@@ -83,11 +88,13 @@ fun AppScreen() {
                     .fillMaxWidth()
                     .weight(1f)
             ) {
-                when (Tab.entries[tab]) {
-                    Tab.EMIT -> EmitTab(prefs, flash)
-                    Tab.DECODE -> DecodeTab(prefs)
-                    Tab.TABLE -> TableTab(prefs)
-                    Tab.LEARN -> LearnTab(prefs)
+                tabStates.SaveableStateProvider(tab) {
+                    when (Tab.entries[tab]) {
+                        Tab.EMIT -> EmitTab(prefs, flash)
+                        Tab.DECODE -> DecodeTab(prefs)
+                        Tab.TABLE -> TableTab(prefs)
+                        Tab.LEARN -> LearnTab(prefs, trainer)
+                    }
                 }
             }
         }

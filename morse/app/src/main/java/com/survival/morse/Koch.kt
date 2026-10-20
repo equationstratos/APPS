@@ -14,6 +14,7 @@ private const val MAX_CHOICES = 4
 private const val NEWEST_WEIGHT = 3.0
 private const val MISS_WEIGHT = 1.0
 private const val MAX_MISS_BONUS = 3
+private const val REPEAT_WEIGHT = 0.35
 
 class KochQuestion(val answer: Char, val choices: List<Char>)
 
@@ -44,18 +45,20 @@ class KochTrainer(level: Int, private val random: Random = Random.Default) {
 
     fun next(previous: Char? = null): KochQuestion {
         val pool = active
-        val candidates = pool.filter { it != previous }.ifEmpty { pool }
-        val weights = candidates.map { char ->
+        // The previous character may come back, only less often: with two characters, forbidding
+        // repeats would make them alternate and the answer could be guessed without listening.
+        val weights = pool.map { char ->
             var weight = 1.0
             if (char == newest && level > MIN_KOCH_LEVEL) weight *= NEWEST_WEIGHT
-            weight + MISS_WEIGHT * (misses[char] ?: 0)
+            weight += MISS_WEIGHT * (misses[char] ?: 0)
+            if (char == previous) weight * REPEAT_WEIGHT else weight
         }
         var pick = random.nextDouble() * weights.sum()
-        var answer = candidates.last()
+        var answer = pool.last()
         for ((index, weight) in weights.withIndex()) {
             pick -= weight
             if (pick < 0.0) {
-                answer = candidates[index]
+                answer = pool[index]
                 break
             }
         }

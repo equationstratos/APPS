@@ -45,8 +45,10 @@ val RADIO_ENTRIES: List<Entry> = listOf(
         title = "PAN PAN : urgence",
         summary = "Urgence sans danger imminent : avarie, remorquage, blessé ou malade à bord. Priorité 2.",
         details = listOf(
-            "PAN PAN (3 fois), puis le nom de la station appelée ou « À TOUS » (3 fois), ICI et le nom du navire.",
-            "Le message commence par la position.",
+            "PAN PAN (3 fois), puis « À TOUS » (3 fois) ou le nom de la station appelée.",
+            "ICI, puis le nom du navire et son indicatif d'appel.",
+            "Position, nature de l'urgence et assistance demandée.",
+            "À VOUS.",
         ),
         source = SRC_ANFR_CRR,
         steps = true,
@@ -168,11 +170,13 @@ val RADIO_ENTRIES: List<Entry> = listOf(
         title = "CB 27 MHz",
         summary = "40 canaux de 26,965 à 27,405 MHz, utilisation libre avec un appareil conforme.",
         details = listOf(
-            "Canal 9 (27,065 MHz) : traditionnellement réservé aux appels d'urgence.",
+            "Canal 9 (27,065 MHz) : traditionnellement réservé aux appels d'urgence ; des associations " +
+                "de cibistes l'écoutent.",
             "Canal 19 (27,185 MHz) : canal des routiers.",
-            "La CB ne bénéficie d'aucune protection contre les brouillages.",
+            "Bande libre : aucune protection contre les brouillages, et rien ne garantit que quelqu'un vous écoute.",
         ),
-        source = "ANFR ; usages des cibistes",
+        source = "ANFR (bandes de fréquences libres) ; réponses ministérielles à l'Assemblée nationale ; " +
+            "usages des cibistes",
         glyph = "27",
         unofficial = "Les rôles des canaux 9 et 19 sont des usages courants, non officiels.",
         keywords = "cb cibi citizen band routiers canal 9 19 27 mhz",

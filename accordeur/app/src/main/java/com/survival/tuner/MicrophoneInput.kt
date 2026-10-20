@@ -47,7 +47,7 @@ object MicrophoneInput {
                 recorder.startRecording()
                 if (recorder.recordingState != AudioRecord.RECORDSTATE_RECORDING) {
                     throw MicUnavailableException(
-                        "Micro indisponible : il est peut-être utilisé par une autre application."
+                        "Micro indisponible${NBSP}: il est peut-être utilisé par une autre application."
                     )
                 }
                 val analyzer = PitchAnalyzer(recorder.sampleRate)
@@ -58,7 +58,7 @@ object MicrophoneInput {
                 while (currentCoroutineContext().isActive) {
                     val read = recorder.read(buffer, 0, buffer.size)
                     if (read < 0) {
-                        throw MicUnavailableException("Micro indisponible : la capture s'est interrompue.")
+                        throw MicUnavailableException("Micro indisponible${NBSP}: la capture s'est interrompue.")
                     }
                     if (read == 0) continue
                     if (warmUp > 0) {
@@ -88,7 +88,7 @@ object MicrophoneInput {
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) !=
             PackageManager.PERMISSION_GRANTED
         ) {
-            throw MicUnavailableException("Micro indisponible : autorisation refusée.")
+            throw MicUnavailableException("Micro indisponible${NBSP}: autorisation refusée.")
         }
         for (sampleRate in SAMPLE_RATES) {
             val minBuffer = AudioRecord.getMinBufferSize(sampleRate, CHANNEL, ENCODING)
@@ -101,7 +101,7 @@ object MicrophoneInput {
                 } catch (e: IllegalArgumentException) {
                     continue
                 } catch (e: SecurityException) {
-                    throw MicUnavailableException("Micro indisponible : autorisation refusée.")
+                    throw MicUnavailableException("Micro indisponible${NBSP}: autorisation refusée.")
                 }
                 if (recorder.state == AudioRecord.STATE_INITIALIZED) return recorder
                 recorder.release()

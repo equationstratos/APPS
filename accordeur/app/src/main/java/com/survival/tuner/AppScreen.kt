@@ -80,7 +80,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
@@ -333,7 +332,7 @@ fun AppScreen() {
 private fun Header() {
     Column {
         Text("Accordeur", color = Accent, fontSize = 26.sp, fontWeight = FontWeight.Bold)
-        Text("Accordage par le micro et diapason", color = TextSecondary, fontSize = 14.sp)
+        Text("Accordage au micro et diapason", color = TextSecondary, fontSize = 14.sp)
     }
 }
 
@@ -395,7 +394,7 @@ private fun TunerCard(
             cents = cents,
             live = live,
             description = if (cents == null || status == null) {
-                "Jauge d'accord : aucune note"
+                "Jauge d'accord${NBSP}: aucune note"
             } else {
                 "Écart ${spokenCents(roundedCents(cents))}, ${statusLabel(status).lowercase()}"
             }
@@ -416,7 +415,7 @@ private fun TunerCard(
         )
         if (reading != null && stringIndex != null && reading.playedMidi != reading.targetMidi) {
             Text(
-                "Note jouée : ${noteLabel(reading.playedMidi, notation)}",
+                "Note jouée${NBSP}: ${noteLabel(reading.playedMidi, notation)}",
                 color = TextSecondary,
                 fontSize = 14.sp,
                 textAlign = TextAlign.Center,
@@ -622,18 +621,26 @@ private fun InstrumentCard(
                 fontSize = 13.sp
             )
         } else {
-            val labelSize = if (instrument.strings.size > 4) 14.sp else 16.sp
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                instrument.strings.forEachIndexed { index, midi ->
-                    StringButton(
-                        label = noteLabel(midi, notation),
-                        number = instrument.stringNumber(index),
-                        description = "Corde ${instrument.stringNumber(index)}, ${spokenNoteLabel(midi, notation)}",
-                        selected = index == selectedString,
-                        fontSize = labelSize,
-                        modifier = Modifier.weight(1f),
-                        onClick = { onSelectString(index) }
-                    )
+            val strings = instrument.strings
+            // Six buttons on one line would be narrower than 48 dp on a 360 dp screen: 2 rows of 3.
+            val columns = if (strings.size <= 4) strings.size else (strings.size + 1) / 2
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                strings.indices.chunked(columns).forEach { rowIndices ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        rowIndices.forEach { index ->
+                            val midi = strings[index]
+                            StringButton(
+                                label = noteLabel(midi, notation),
+                                number = instrument.stringNumber(index),
+                                description = "Corde ${instrument.stringNumber(index)}, " +
+                                    spokenNoteLabel(midi, notation),
+                                selected = index == selectedString,
+                                modifier = Modifier.weight(1f),
+                                onClick = { onSelectString(index) }
+                            )
+                        }
+                        repeat(columns - rowIndices.size) { Spacer(Modifier.weight(1f)) }
+                    }
                 }
             }
             Spacer(Modifier.height(8.dp))
@@ -650,7 +657,7 @@ private fun InstrumentCard(
                 )
                 if (manual) {
                     Spacer(Modifier.width(8.dp))
-                    ChoiceChip(label = "Auto", selected = false, onClick = onAuto)
+                    AutoButton(onClick = onAuto)
                 }
             }
         }
@@ -717,7 +724,6 @@ private fun StringButton(
     number: Int,
     description: String,
     selected: Boolean,
-    fontSize: TextUnit,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
@@ -741,11 +747,27 @@ private fun StringButton(
         Text(
             label,
             color = if (selected) Bg else Color.White,
-            fontSize = fontSize,
+            fontSize = 16.sp,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
             softWrap = false
         )
+    }
+}
+
+/** Returns to the automatic string choice after a string was picked by hand. */
+@Composable
+private fun AutoButton(onClick: () -> Unit) {
+    Box(
+        Modifier
+            .heightIn(min = 48.dp)
+            .clip(ButtonShape)
+            .background(Navy)
+            .clickable(role = Role.Button, onClickLabel = "revenir à la détection automatique", onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 6.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text("Auto", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
     }
 }
 
@@ -781,7 +803,7 @@ private fun ToneCard(
                 Modifier
                     .weight(1f)
                     .clearAndSetSemantics {
-                        contentDescription = "Note du diapason : ${spokenNoteLabel(midi, notation)}"
+                        contentDescription = "Note du diapason${NBSP}: ${spokenNoteLabel(midi, notation)}"
                     },
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -851,7 +873,7 @@ private fun ToneCard(
                 onClick = { onRichChange(false) }
             )
             ChoiceChip(
-                label = "Riche (harmoniques)",
+                label = "Riche",
                 selected = rich,
                 modifier = Modifier.weight(1f),
                 onClick = { onRichChange(true) }
@@ -860,15 +882,15 @@ private fun ToneCard(
         if (!rich && midi < LOW_TONE_MIDI) {
             Spacer(Modifier.height(8.dp))
             Text(
-                "Note grave : peu audible sur le haut-parleur du téléphone. " +
-                    "Choisissez le timbre riche ou utilisez un casque.",
+                "Note grave${NBSP}: peu audible sur le haut-parleur du téléphone. " +
+                    "Choisissez le timbre riche (avec harmoniques) ou utilisez un casque.",
                 color = TextSecondary,
                 fontSize = 13.sp
             )
         }
         if (error) {
             Spacer(Modifier.height(8.dp))
-            Text("Sortie audio indisponible : impossible de jouer la note.", color = Danger, fontSize = 14.sp)
+            Text("Sortie audio indisponible${NBSP}: impossible de jouer la note.", color = Danger, fontSize = 14.sp)
         }
     }
 }
@@ -920,7 +942,7 @@ private fun SettingsCard(
         }
         Spacer(Modifier.height(8.dp))
         Text(
-            "De $MIN_REFERENCE_HZ à $MAX_REFERENCE_HZ${NBSP}Hz. La norme est 440${NBSP}Hz ; " +
+            "De $MIN_REFERENCE_HZ à $MAX_REFERENCE_HZ${NBSP}Hz. La norme est 440${NBSP}Hz${NBSP}; " +
                 "442${NBSP}Hz est courant en orchestre, 415${NBSP}Hz en musique baroque.",
             color = TextSecondary,
             fontSize = 13.sp
@@ -944,7 +966,7 @@ private fun SettingsCard(
         }
         Spacer(Modifier.height(8.dp))
         Text(
-            "Octaves en numérotation internationale : La4 = 440${NBSP}Hz, Do4 = do central du piano. " +
+            "Octaves en numérotation internationale${NBSP}: La4 = 440${NBSP}Hz, Do4 = do central du piano. " +
                 "Le solfège français traditionnel les appelle La3 et Do3.",
             color = TextSecondary,
             fontSize = 13.sp
@@ -960,7 +982,7 @@ private fun TipsCard() {
         listOf(
             "Placez le téléphone près de l'instrument, dans un endroit calme.",
             "Jouez une seule corde à la fois et laissez-la sonner.",
-            "Accordez en montant vers la note : si la corde est trop haute, détendez-la " +
+            "Accordez en montant vers la note${NBSP}: si la corde est trop haute, détendez-la " +
                 "sous la note puis remontez.",
             "La note devient verte quand l'écart est de 5${NBSP}cents ou moins."
         ).forEach { tip ->
@@ -985,7 +1007,8 @@ private fun PermissionCard(permanentlyDenied: Boolean, onClick: () -> Unit) {
         Text(
             if (permanentlyDenied) {
                 "L'accès au micro a été refusé. Activez-le dans les paramètres de l'application, " +
-                    "rubrique Autorisations > Micro. Le diapason reste utilisable."
+                    "rubrique «${NBSP}Autorisations${NBSP}» puis «${NBSP}Micro${NBSP}». " +
+                    "Le diapason reste utilisable."
             } else {
                 "L'accordeur écoute l'instrument avec le micro du téléphone pour mesurer la note jouée. " +
                     "Aucun son n'est enregistré ni envoyé."
@@ -1183,7 +1206,11 @@ private fun openAppSettings(context: Context) {
     try {
         context.startActivity(intent)
     } catch (e: ActivityNotFoundException) {
-        context.startActivity(Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        try {
+            context.startActivity(Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        } catch (ignored: ActivityNotFoundException) {
+            // No settings screen at all: the explanation card stays visible.
+        }
     }
 }
 

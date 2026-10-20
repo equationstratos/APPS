@@ -16,7 +16,8 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -49,9 +50,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -68,9 +71,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -83,6 +88,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import kotlin.math.ln
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 private val CardShape = RoundedCornerShape(16.dp)
 private val Tabular = TextStyle(fontFeatureSettings = "tnum")
@@ -112,13 +118,22 @@ fun AppScreen() {
 
     // Notifications (Android 13+): only needed for the "Arrêter" action, the signal plays anyway.
     val notificationsNeedPermission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+    val activity = remember(context) { context.findActivity() }
+    // True while the system still shows its permission dialog (refused once, not "never ask again").
+    val canAskNotifications = {
+        notificationsNeedPermission && activity != null &&
+            ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.POST_NOTIFICATIONS)
+    }
     var notificationsOn by remember { mutableStateOf(notificationsEnabled(context)) }
     var notificationsAsked by remember { mutableStateOf(SignalHub.notificationsAsked(context)) }
+    var canAskAgain by remember { mutableStateOf(canAskNotifications()) }
     val notificationLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
         notificationsOn = notificationsEnabled(context)
+        canAskAgain = canAskNotifications()
     }
     LifecycleResumeEffect(Unit) {
         notificationsOn = notificationsEnabled(context)
+        canAskAgain = canAskNotifications()
         onPauseOrDispose { }
     }
     val askNotificationsOnce = {
@@ -165,11 +180,8 @@ fun AppScreen() {
         }
         OptionsCard(options, status, flashAvailable, onChange = { SignalHub.setOptions(context, it) })
         if (!notificationsOn && (!notificationsNeedPermission || notificationsAsked)) {
-            val activity = context.findActivity()
-            val canAsk = notificationsNeedPermission && activity != null &&
-                ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.POST_NOTIFICATIONS)
-            NotificationCard(canAsk) {
-                if (canAsk) {
+            NotificationCard(canAskAgain) {
+                if (canAskAgain) {
                     notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                 } else {
                     openNotificationSettings(context)
@@ -194,7 +206,7 @@ private fun HearingWarning() {
         Icon(Icons.Filled.WarningGlyph, contentDescription = "Attention", tint = Warning, modifier = Modifier.size(28.dp))
         Spacer(Modifier.width(12.dp))
         Text(
-            "Ne collez pas le haut-parleur à l'oreille : risque pour l'audition.",
+            "Ne collez pas le haut-parleur à l'oreille : risque pour l'audition.",
             color = Color.White,
             fontSize = 15.sp
         )
@@ -306,7 +318,12 @@ private fun WhistleCard(status: SignalStatus, onToggle: () -> Unit, onHoldStart:
                 .padding(top = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            HoldPad(Modifier.weight(1f), onHoldStart, onHoldEnd)
+            HoldPad(
+                Modifier.weight(1f),
+                enabled = status.mode == null || status.hold,
+                onHoldStart = onHoldStart,
+                onHoldEnd = onHoldEnd
+            )
             Column(
                 Modifier
                     .weight(1f)
@@ -337,46 +354,118 @@ private fun WhistleCard(status: SignalStatus, onToggle: () -> Unit, onHoldStart:
     }
 }
 
-/** Whistles while pressed: the press starts the signal, the release (or cancel) stops it. */
+/** How long a touch on the hold pad must stay still before it whistles (a scroll moves sooner). */
+private const val HOLD_SETTLE_MS = 100L
+
+/** Length of the short blast given by a quick tap on the hold pad. */
+private const val TAP_BLAST_MS = 500L
+
+private enum class PadTouch { Hold, Tap, Scroll }
+
+/**
+ * Whistles while pressed. A touch that moves during its first [HOLD_SETTLE_MS] is a scroll and is
+ * left to the page, so scrolling over the pad never makes a sound. A touch that stays still
+ * whistles until the finger is lifted (the gesture then belongs to the pad: sliding the finger
+ * keeps whistling), and a quick tap gives a short blast. The pad is inert while another signal
+ * plays, so that a stray touch cannot replace a long distress code and then cut it at the release.
+ */
 @Composable
-private fun HoldPad(modifier: Modifier, onHoldStart: () -> Unit, onHoldEnd: () -> Unit) {
+private fun HoldPad(modifier: Modifier, enabled: Boolean, onHoldStart: () -> Unit, onHoldEnd: () -> Unit) {
     var pressed by remember { mutableStateOf(false) }
+    // Number of the last touch that made a sound: a pending end of tap blast only ends its own sound.
+    var soundTouch by remember { mutableIntStateOf(0) }
+    val isEnabled by rememberUpdatedState(enabled)
     val start by rememberUpdatedState(onHoldStart)
     val end by rememberUpdatedState(onHoldEnd)
+    val scope = rememberCoroutineScope()
     Column(
         modifier
             .height(96.dp)
             .clip(RoundedCornerShape(16.dp))
             .background(if (pressed) Accent else Bg)
-            .border(2.dp, Accent, RoundedCornerShape(16.dp))
+            .border(2.dp, if (enabled) Accent else Navy, RoundedCornerShape(16.dp))
             .clearAndSetSemantics {
-                contentDescription = "Siffler tant que le bouton est maintenu"
+                contentDescription = if (enabled) {
+                    "Siffler tant que le bouton est maintenu"
+                } else {
+                    "Sifflet à maintenir, indisponible pendant un autre signal"
+                }
                 role = Role.Button
+                if (!enabled) disabled()
             }
             .pointerInput(Unit) {
-                detectTapGestures(
-                    onPress = {
-                        pressed = true
-                        start()
+                awaitEachGesture {
+                    val down = awaitFirstDown(requireUnconsumed = false)
+                    if (!isEnabled) return@awaitEachGesture
+                    val kind = withTimeoutOrNull(HOLD_SETTLE_MS) {
+                        var result: PadTouch? = null
+                        while (result == null) {
+                            val change = awaitPointerEvent().changes.firstOrNull { it.id == down.id }
+                            result = when {
+                                change == null -> PadTouch.Scroll
+                                change.isConsumed -> PadTouch.Scroll
+                                !change.pressed -> PadTouch.Tap
+                                (change.position - down.position).getDistance() > viewConfiguration.touchSlop ->
+                                    PadTouch.Scroll
+                                else -> null
+                            }
+                        }
+                        result
+                    } ?: PadTouch.Hold
+                    if (kind == PadTouch.Scroll) return@awaitEachGesture
+                    val touch = soundTouch + 1
+                    soundTouch = touch
+                    pressed = true
+                    start()
+                    if (kind == PadTouch.Tap) {
+                        scope.launch {
+                            try {
+                                delay(TAP_BLAST_MS)
+                            } finally {
+                                if (soundTouch == touch) {
+                                    pressed = false
+                                    end()
+                                }
+                            }
+                        }
+                    } else {
                         try {
-                            tryAwaitRelease()
+                            do {
+                                val event = awaitPointerEvent()
+                                event.changes.forEach { it.consume() }
+                            } while (event.changes.any { it.pressed })
                         } finally {
                             pressed = false
                             end()
                         }
                     }
-                )
-            },
+                }
+            }
+            .padding(horizontal = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            if (pressed) "Sifflement…" else "Maintenir",
-            color = if (pressed) Bg else Color.White,
+            when {
+                !enabled -> "Indisponible"
+                pressed -> "Sifflement…"
+                else -> "Maintenir"
+            },
+            color = when {
+                !enabled -> TextSecondary
+                pressed -> Bg
+                else -> Color.White
+            },
             fontSize = 18.sp,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center
         )
-        Text("pour siffler", color = if (pressed) Bg else TextSecondary, fontSize = 14.sp)
+        Text(
+            if (enabled) "pour siffler" else "pendant un signal",
+            color = if (pressed) Bg else TextSecondary,
+            fontSize = 14.sp,
+            textAlign = TextAlign.Center
+        )
     }
 }
 
@@ -487,7 +576,7 @@ private fun OptionsCard(
         SwitchRow(
             title = "Volume au maximum",
             detail = if (volumeBlocked) {
-                "Impossible en mode Ne pas déranger : montez le volume des alarmes avec les touches."
+                "Refusé par le mode «\u00A0Ne pas déranger\u00A0»\u00A0: montez le volume des alarmes avec les touches."
             } else {
                 "Monte le volume des alarmes pendant le signal, puis rétablit votre réglage."
             },
@@ -500,7 +589,7 @@ private fun OptionsCard(
             title = "Clignoter la lampe avec le son",
             detail = when {
                 !flashAvailable -> "Aucune lampe sur cet appareil."
-                torchBusy -> "Lampe indisponible : elle est peut-être utilisée par une autre application."
+                torchBusy -> "Lampe indisponible\u00A0: elle est peut-être utilisée par une autre application."
                 else -> "La lampe s'allume au rythme du signal, visible de loin la nuit."
             },
             detailColor = if (torchBusy) Warning else TextSecondary,
@@ -601,7 +690,7 @@ private fun NotificationCard(canAsk: Boolean, onFix: () -> Unit) {
             Text("Notifications désactivées", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
         }
         Text(
-            "Le signal fonctionne quand même, mais sans le bouton « Arrêter » dans le volet des notifications.",
+            "Le signal fonctionne quand même, mais sans le bouton «\u00A0Arrêter\u00A0» dans le volet des notifications.",
             color = TextSecondary,
             fontSize = 14.sp
         )
@@ -641,13 +730,13 @@ private fun InfoCard() {
         }
         Bullet("Si vous avez du réseau, appelez d'abord le 112, numéro d'urgence européen.")
         Bullet(
-            "Détresse en montagne : 6 signaux par minute, un toutes les 10 s, puis 1 minute de silence " +
-                "pour écouter. Recommencez jusqu'à l'arrivée des secours."
+            "Détresse en montagne\u00A0: 6 signaux par minute, un toutes les 10\u00A0s, puis 1\u00A0minute de " +
+                "silence pour écouter. Recommencez jusqu'à l'arrivée des secours."
         )
-        Bullet("Réponse : 3 signaux par minute, un toutes les 20 s, signifient « message reçu ».")
+        Bullet("Réponse\u00A0: 3 signaux par minute, un toutes les 20\u00A0s, signifient «\u00A0message reçu\u00A0».")
         Bullet("La nuit, une lumière au même rythme est aussi un signal de détresse reconnu.")
-        Bullet("Placez-vous à découvert, haut-parleur dégagé : un son aigu porte loin mais traverse mal les obstacles.")
-        Bullet("Éteignez l'écran : le signal continue et la batterie dure plus longtemps.")
+        Bullet("Placez-vous à découvert, haut-parleur dégagé\u00A0: un son aigu porte loin mais traverse mal les obstacles.")
+        Bullet("Éteignez l'écran\u00A0: le signal continue et la batterie dure plus longtemps.")
     }
 }
 

@@ -291,11 +291,12 @@ val ALERT_ENTRIES: List<Entry> = listOf(
         section = Section.ALERTE,
         group = G_PHONE,
         title = "FR-Alert",
-        summary = "Notification sur les téléphones présents dans la zone en danger, avec un son spécifique, " +
-            "même en mode silencieux.",
+        summary = "Notification sur les téléphones présents dans la zone en danger, accompagnée d'un son " +
+            "spécifique, même en mode silencieux.",
         details = listOf(
             "Aucune application ni inscription : il suffit d'un téléphone allumé.",
             "Rien n'est reçu si le téléphone est éteint ou en mode avion.",
+            "Selon le téléphone et le réseau, l'alerte peut aussi arriver par SMS, sans son spécifique.",
             "L'alerte passe par les antennes relais : l'État n'a pas accès à la position des téléphones.",
             "FR-Alert complète les sirènes et ne les remplace pas.",
             "Appliquez les consignes indiquées dans le message.",

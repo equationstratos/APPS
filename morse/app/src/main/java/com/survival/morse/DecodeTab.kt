@@ -9,7 +9,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -216,9 +215,16 @@ private fun KeyPanel(prefs: MorsePrefs, decoder: MorseDecoder, refresh: () -> Un
                             pressedAt = downAt
                             pressed = true
                             tone.setKey(true)
-                            val up = waitForUpOrCancellation()
-                            up?.consume()
-                            val upAt = up?.uptimeMillis ?: SystemClock.uptimeMillis()
+                            // Every move is consumed so the page does not scroll while the key is held.
+                            var upAt = downAt
+                            while (true) {
+                                val event = awaitPointerEvent()
+                                event.changes.forEach { it.consume() }
+                                if (event.changes.none { it.pressed }) {
+                                    upAt = event.changes.maxOfOrNull { it.uptimeMillis } ?: SystemClock.uptimeMillis()
+                                    break
+                                }
+                            }
                             tone.setKey(false)
                             pressed = false
                             decoder.mark((upAt - pressedAt).toDouble())

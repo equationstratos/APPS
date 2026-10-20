@@ -274,7 +274,9 @@ private fun SectionList(section: Section, state: LazyListState, actions: Actions
         groups.forEachIndexed { groupIndex, group ->
             item(key = "group-$groupIndex") { GroupTitle(group.title) }
             if (section == Section.ALPHABET) {
-                items(group.entries.chunked(2), key = { pair -> "pair-" + pair.first().id }) { pair ->
+                // Letters and digits fit a two-column grid; longer number words get a full-width card.
+                val (grid, wide) = group.entries.partition { it.glyph?.singleOrNull()?.isLetterOrDigit() == true }
+                items(grid.chunked(2), key = { pair -> "pair-" + pair.first().id }) { pair ->
                     Row(
                         Modifier
                             .fillMaxWidth()
@@ -287,6 +289,7 @@ private fun SectionList(section: Section, state: LazyListState, actions: Actions
                         if (pair.size == 1) Box(Modifier.weight(1f))
                     }
                 }
+                items(wide, key = { it.id }) { entry -> EntryCard(entry, showSection = false, actions) }
             } else {
                 items(group.entries, key = { it.id }) { entry -> EntryCard(entry, showSection = false, actions) }
             }
@@ -750,11 +753,7 @@ private fun AlpineCadenceCard() {
                 }
             }
         }
-        val view = LocalView.current
-        DisposableEffect(view) {
-            view.keepScreenOn = true
-            onDispose { view.keepScreenOn = false }
-        }
+        KeepScreenOn()
     }
 
     val step = if (running) cadenceAt(now - startedAt, mode) else null
@@ -960,11 +959,7 @@ private const val FIELD_MAX_LENGTH = 80
 
 @Composable
 private fun BigDisplay(lines: List<String>, onClose: () -> Unit, onCopy: (String) -> Unit) {
-    val view = LocalView.current
-    DisposableEffect(view) {
-        view.keepScreenOn = true
-        onDispose { view.keepScreenOn = false }
-    }
+    KeepScreenOn()
     Column(
         Modifier
             .fillMaxSize()
@@ -1036,6 +1031,23 @@ private fun BigDisplay(lines: List<String>, onClose: () -> Unit, onCopy: (String
 private const val HEADLINE_MAX_CHARS = 8
 
 /* ---------- Small building blocks ---------- */
+
+/** Screens currently asking to keep the display on (large display, cadence guide); main thread only. */
+private var keepScreenOnRequests = 0
+
+/** Keeps the display on while in composition, without cancelling another screen that also asks for it. */
+@Composable
+private fun KeepScreenOn() {
+    val view = LocalView.current
+    DisposableEffect(view) {
+        keepScreenOnRequests++
+        view.keepScreenOn = true
+        onDispose {
+            keepScreenOnRequests = (keepScreenOnRequests - 1).coerceAtLeast(0)
+            if (keepScreenOnRequests == 0) view.keepScreenOn = false
+        }
+    }
+}
 
 @Composable
 private fun SurvieCard(content: @Composable ColumnScope.() -> Unit) {

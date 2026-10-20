@@ -85,37 +85,37 @@ enum class SignalMode(
     Whistle(
         "Sifflet",
         "Appeler, attirer l'attention, guider quelqu'un vers vous.",
-        "Son aigu d'environ 3 kHz avec un léger trille, comme un sifflet à bille.",
+        "Son aigu d'environ 3\u00A0kHz avec un léger trille, comme un sifflet à bille.",
         counted = false
     ),
     Sos(
         "SOS sonore",
         "Appel au secours universel, compris partout (code Morse).",
-        "··· ––– ··· en boucle : trois courts, trois longs, trois courts.",
+        "··· ––– ··· en boucle\u00A0: trois courts, trois longs, trois courts.",
         counted = false
     ),
     Mountain(
         "Détresse montagne",
         "Signal international de détresse en montagne.",
-        "6 coups de sifflet par minute, un toutes les 10 s, puis 1 min de silence pour écouter.",
+        "Un coup de 3\u00A0s toutes les 10\u00A0s (6 par minute), puis 1\u00A0min de silence pour écouter.",
         counted = true
     ),
     Reply(
         "Réponse",
-        "Répondre à un appel de détresse : « Nous vous avons entendu ».",
-        "3 coups de sifflet par minute, un toutes les 20 s, puis 1 min de silence.",
+        "Répondre à un appel de détresse\u00A0: «\u00A0Nous vous avons entendu\u00A0».",
+        "Un coup de 3\u00A0s toutes les 20\u00A0s (3 par minute), puis 1\u00A0min de silence.",
         counted = true
     ),
     Siren(
         "Sirène",
         "Son montant et descendant, très repérable de loin.",
-        "Balayage de 1 000 à 3 500 Hz, puis retour, toutes les 4 s.",
+        "Balayage de 1\u00A0000 à 3\u00A0500\u00A0Hz, puis retour, toutes les 4\u00A0s.",
         counted = false
     ),
     Alarm(
         "Alarme",
         "Alerte stridente pour signaler un danger immédiat.",
-        "Deux tons aigus alternés rapidement (2 500 et 3 300 Hz).",
+        "Deux tons aigus alternés rapidement (2\u00A0500 et 3\u00A0300\u00A0Hz).",
         counted = false
     );
 
@@ -227,17 +227,17 @@ fun SignalMode.statusAt(elapsedMs: Long): String {
     val p = positionAt(elapsedMs)
     return when {
         p.toneNumber > 0 -> "Signal ${p.toneNumber} sur ${p.toneCount}"
-        p.listening -> "Silence d'écoute : reprise dans ${formatWait(p.untilNextToneMs)}"
+        p.listening -> "Silence d'écoute\u00A0: reprise dans ${formatWait(p.untilNextToneMs)}"
         else -> "Prochain signal dans ${formatWait(p.untilNextToneMs)}"
     }
 }
 
-/** "8 s", "1 min 05 s": a wait rounded up to the second. */
+/** "8 s", "1 min 05 s" (non-breaking spaces): a wait rounded up to the second. */
 fun formatWait(ms: Long): String {
     val total = ((ms.coerceAtLeast(0) + 999) / 1000)
     val minutes = total / 60
     val seconds = total % 60
-    return if (minutes == 0L) "$seconds s" else String.format(Locale.FRANCE, "%d min %02d s", minutes, seconds)
+    return if (minutes == 0L) "$seconds\u00A0s" else String.format(Locale.FRANCE, "%d\u00A0min %02d\u00A0s", minutes, seconds)
 }
 
 /** "02:15" or "1:02:15": a chronometer reading, truncated to the second. */
@@ -259,11 +259,12 @@ fun formatCountdown(ms: Long): String = formatClock(((ms.coerceAtLeast(0) + 999)
 /** Automatic stop choices, in minutes (0 = never). */
 val AUTO_STOP_CHOICES = listOf(0, 5, 15, 30, 60, 120)
 
+/** "Jamais", "15 min", "1 h", "1 h 30" (non-breaking spaces). */
 fun autoStopLabel(minutes: Int): String = when {
     minutes <= 0 -> "Jamais"
-    minutes % 60 == 0 -> "${minutes / 60} h"
-    minutes > 60 -> "${minutes / 60} h ${String.format(Locale.FRANCE, "%02d", minutes % 60)}"
-    else -> "$minutes min"
+    minutes % 60 == 0 -> "${minutes / 60}\u00A0h"
+    minutes > 60 -> "${minutes / 60}\u00A0h\u00A0${String.format(Locale.FRANCE, "%02d", minutes % 60)}"
+    else -> "$minutes\u00A0min"
 }
 
 /** User options, persisted by the app and applied live by the service. */

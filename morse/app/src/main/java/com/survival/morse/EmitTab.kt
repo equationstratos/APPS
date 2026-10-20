@@ -294,7 +294,7 @@ internal fun EmitTab(prefs: MorsePrefs, flash: ScreenFlash) {
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !running,
-                detail = "En boucle, avec une pause de 7 points entre deux envois"
+                detail = "En boucle, avec une pause de 7 unités (espace entre mots) entre deux envois"
             )
         }
     }
@@ -339,7 +339,8 @@ private fun CodeCard(shown: Encoded?, activeToken: Int, running: Boolean, wpm: I
                 fontFamily = FontFamily.Monospace
             )
             val durationMs = timelineOf(shown).endUnit * unitMs(wpm)
-            Hint("${shown.tokens.size} signes · ${formatDuration(durationMs)} à ${formatWpm(wpm)}")
+            val count = shown.tokens.size
+            Hint("$count ${if (count > 1) "signes" else "signe"} · ${formatDuration(durationMs)} à ${formatWpm(wpm)}")
         }
         if (!running && ignored.isNotEmpty()) {
             Hint("Ignorés (sans équivalent Morse) : ${ignored.joinToString(" ")}", Warning)

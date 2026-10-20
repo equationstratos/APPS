@@ -40,7 +40,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 
@@ -57,10 +59,10 @@ private data class Score(
 private fun KochTrainer.score() = Score(correct, total, streak, recentCorrect, recentCount)
 
 @Composable
-internal fun LearnTab(prefs: MorsePrefs) {
+internal fun LearnTab(prefs: MorsePrefs, trainer: KochTrainer) {
     val tone = remember { ToneOutput() }
     val toneHz = remember { prefs.toneHz }
-    val trainer = remember { KochTrainer(prefs.kochLevel) }
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
     var level by remember { mutableIntStateOf(trainer.level) }
     var wpm by remember { mutableIntStateOf(prefs.learnWpm) }
     var typing by remember { mutableStateOf(prefs.learnTyping) }
@@ -75,6 +77,8 @@ internal fun LearnTab(prefs: MorsePrefs) {
     }
 
     fun play(char: Char) {
+        // The next question may come up just after the app was left: stay silent in the background.
+        if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) return
         val code = Morse.codeOf(char) ?: return
         tone.play(timelineOf(listOf(listOf(MorseToken(char.toString(), code)))), unitMs(wpm), toneHz, repeat = false)
     }

@@ -119,7 +119,7 @@ class Entry(
             append('\n').append(if (steps) "${index + 1}. " else "• ").append(line)
         }
         unofficial?.let { append("\n(").append(it).append(')') }
-        append("\nSource : ").append(source)
+        append("\nSource").append(NBSP).append(": ").append(source)
     }
 }
 

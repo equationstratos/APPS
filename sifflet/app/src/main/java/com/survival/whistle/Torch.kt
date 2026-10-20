@@ -23,7 +23,7 @@ fun findFlashCamera(manager: CameraManager?): String? {
             manager.getCameraCharacteristics(id)
         } catch (e: CameraAccessException) {
             continue
-        } catch (e: IllegalArgumentException) {
+        } catch (e: RuntimeException) {
             continue
         }
         if (characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE) != true) continue
@@ -94,7 +94,8 @@ class TorchWorker(context: Context, private val onState: (TorchState) -> Unit) {
             // Camera in use by another app, or disconnected.
             lit = false
             if (on) onState(TorchState.Unavailable)
-        } catch (e: IllegalArgumentException) {
+        } catch (e: RuntimeException) {
+            // Unknown id or flash (IllegalArgumentException), or a vendor error: never crash the thread.
             lit = false
             if (on) onState(TorchState.Unavailable)
         }
