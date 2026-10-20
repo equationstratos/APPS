@@ -9,6 +9,13 @@ import java.util.Locale
 /** Number of measurements kept. */
 internal const val HISTORY_SIZE = 20
 
+/**
+ * Plausible stored rates. Wide enough for every result the app can produce: a slow manual count
+ * (5 taps over 15 s gives 16 BPM) and the fastest taps (240 BPM).
+ */
+private const val MIN_STORED_BPM = 10
+private const val MAX_STORED_BPM = 300
+
 internal enum class MeasureContext(val key: String, val label: String) {
     NONE("aucun", "Non précisé"),
     REST("repos", "Au repos"),
@@ -53,7 +60,7 @@ internal object HistoryCodec {
             val parts = line.trim().split(SEPARATOR)
             if (parts.size != 4) return@mapNotNull null
             val time = parts[0].toLongOrNull()?.takeIf { it > 0L } ?: return@mapNotNull null
-            val bpm = parts[1].toIntOrNull()?.takeIf { it in 20..300 } ?: return@mapNotNull null
+            val bpm = parts[1].toIntOrNull()?.takeIf { it in MIN_STORED_BPM..MAX_STORED_BPM } ?: return@mapNotNull null
             val context = MeasureContext.fromKey(parts[2]) ?: return@mapNotNull null
             val method = MeasureMethod.fromKey(parts[3]) ?: return@mapNotNull null
             HistoryEntry(time, bpm, context, method)

@@ -69,7 +69,8 @@ internal class ManualUiState {
     }
 
     fun selectDuration(seconds: Int) {
-        if (counting) return
+        // Touching the duration already selected keeps the result on screen.
+        if (counting || seconds * 1000L == session.durationMs) return
         session = TapSession(seconds * 1000L)
         clear()
     }
@@ -205,7 +206,12 @@ private fun TapTarget(view: ManualView, onTap: () -> Unit) {
             Unit
         }
     }
-    val description = "Zone de comptage, ${view.value} ${view.caption}. Touchez à chaque battement."
+    val description = when {
+        view.finished && view.rate == null -> "Comptage terminé : pas assez de battements réguliers"
+        view.finished -> "Comptage terminé : ${view.value} battements par minute"
+        view.value == NO_VALUE -> "Zone de comptage. Touchez à chaque battement."
+        else -> "Zone de comptage : ${view.value} ${view.caption}. Touchez à chaque battement."
+    }
     Box(
         Modifier
             .size(220.dp)

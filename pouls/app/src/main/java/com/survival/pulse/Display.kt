@@ -89,7 +89,7 @@ internal fun cameraReadout(
         value = NO_VALUE,
         progress = 1f,
         tone = Tone.WARNING,
-        status = "$UNRELIABLE_MESSAGE Appuyez légèrement, ne bougez pas, ou utilisez le mode manuel.",
+        status = FAILED_HINT,
         detail = null,
         note = null,
         description = "Mesure peu fiable",

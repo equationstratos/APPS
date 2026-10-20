@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,12 +40,20 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 
 private const val CAMERA_PERMISSION = Manifest.permission.CAMERA
 
 /** Without a finger for this long, the measurement stops (torch and camera off). */
 private const val NO_FINGER_TIMEOUT_MS = 120_000L
+
+/** Without any frame for this long (camera busy or failing), the measurement stops with a message. */
+private const val NO_FRAME_TIMEOUT_MS = 8_000L
+
+private const val NO_FRAME_MESSAGE =
+    "La caméra ne répond pas : elle est peut-être utilisée par une autre application. " +
+        "Réessayez ou utilisez le mode manuel."
 
 /** State of the camera tab, kept above the tabs so that a result survives a tab change. */
 internal class CameraUiState {
@@ -68,6 +77,7 @@ internal class CameraUiState {
         private set
     private var savedId: Long? = null
     private var waitingSinceMs: Long? = null
+    private var lastFrameMs = 0L
 
     fun start() {
         running = true
@@ -81,6 +91,7 @@ internal class CameraUiState {
         context = MeasureContext.NONE
         savedId = null
         waitingSinceMs = null
+        lastFrameMs = SystemClock.elapsedRealtime()
     }
 
     fun stop() {
@@ -107,10 +118,18 @@ internal class CameraUiState {
         notice = message
     }
 
+    /** Stops a measurement that receives no frame at all (the camera never opened or froze). */
+    fun checkFrames(now: Long) {
+        if (!running || now - lastFrameMs <= NO_FRAME_TIMEOUT_MS) return
+        stop()
+        notice = NO_FRAME_MESSAGE
+    }
+
     fun onSnapshot(value: SessionSnapshot, store: HistoryStore) {
         if (!running) return
+        val now = SystemClock.elapsedRealtime()
+        lastFrameMs = now
         if (value.phase == Phase.WAITING) {
-            val now = SystemClock.elapsedRealtime()
             val since = waitingSinceMs ?: now.also { waitingSinceMs = it }
             if (now - since > NO_FINGER_TIMEOUT_MS) {
                 stop()
@@ -191,8 +210,22 @@ internal fun CameraTab(state: CameraUiState, store: HistoryStore, onManual: () -
                 onSnapshot = { state.onSnapshot(it, store) },
                 onError = state::onError,
             )
+            // Torch and camera off as soon as the app leaves the foreground, without waiting for a recomposition.
+            val pauseObserver = LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_PAUSE) camera.stop()
+            }
+            lifecycleOwner.lifecycle.addObserver(pauseObserver)
             camera.start()
-            onDispose { camera.stop() }
+            onDispose {
+                lifecycleOwner.lifecycle.removeObserver(pauseObserver)
+                camera.stop()
+            }
+        }
+        LaunchedEffect(Unit) {
+            while (true) {
+                delay(1_000L)
+                state.checkFrames(SystemClock.elapsedRealtime())
+            }
         }
     }
 

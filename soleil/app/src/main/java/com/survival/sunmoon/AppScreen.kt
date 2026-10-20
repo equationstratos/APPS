@@ -190,14 +190,15 @@ fun AppScreen() {
         if (context.hasLocationPermission()) startLocating() else permissionLauncher.launch(LOCATION_PERMISSIONS)
     }
 
-    // Back from the system settings: the permission or the location switch may have changed.
+    // Back from the system settings: once the permission or the location switch the user went
+    // to change is on, the search they asked for starts again by itself.
     LifecycleResumeEffect(Unit) {
-        when (status) {
-            LocateStatus.DENIED, LocateStatus.DENIED_FOREVER ->
-                if (context.hasLocationPermission()) status = LocateStatus.IDLE
-            LocateStatus.DISABLED -> if (context.isLocationOn()) status = LocateStatus.IDLE
-            else -> Unit
+        val resume = when (status) {
+            LocateStatus.DENIED, LocateStatus.DENIED_FOREVER -> context.hasLocationPermission()
+            LocateStatus.DISABLED -> context.hasLocationPermission() && context.isLocationOn()
+            else -> false
         }
+        if (resume) startLocating()
         onPauseOrDispose { }
     }
     // The location request never outlives the visible screen.

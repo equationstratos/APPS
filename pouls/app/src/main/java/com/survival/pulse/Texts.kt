@@ -18,6 +18,10 @@ internal const val DISCLAIMER =
 
 internal const val UNRELIABLE_MESSAGE = "Mesure peu fiable, recommencez."
 
+/** Shown after a refused result: the usual causes and the fallback. */
+internal const val FAILED_HINT =
+    "$UNRELIABLE_MESSAGE Posez le doigt sans appuyer et restez immobile, ou utilisez le mode manuel."
+
 internal const val INTERRUPTED_MESSAGE =
     "Mesure interrompue : l'application est passée en arrière-plan. Relancez la mesure."
 
@@ -40,7 +44,7 @@ internal fun signalQuality(score: Double): SignalQuality = when {
 internal fun cameraMessage(snapshot: SessionSnapshot): String = when (snapshot.phase) {
     Phase.WAITING -> when {
         snapshot.finger == FingerStatus.TOO_DARK ->
-            "Image trop sombre : appuyez moins fort, ou éclairez le doigt si le flash ne s'allume pas."
+            "Image trop sombre : appuyez moins fort ou éclairez le doigt si le flash ne s'allume pas."
         snapshot.interrupted -> "Doigt retiré : mesure remise à zéro. Reposez le doigt pour recommencer."
         else -> FINGER_INSTRUCTION
     }
@@ -51,7 +55,7 @@ internal fun cameraMessage(snapshot: SessionSnapshot): String = when (snapshot.p
         else -> "Analyse du pouls, restez immobile…"
     }
     Phase.DONE -> "Mesure terminée."
-    Phase.FAILED -> "$UNRELIABLE_MESSAGE Appuyez légèrement, ne bougez pas, ou utilisez le mode manuel."
+    Phase.FAILED -> FAILED_HINT
 }
 
 /** "12 s / 30 s" during the measurement. */
