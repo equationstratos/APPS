@@ -1,6 +1,6 @@
 # Boîte à outils Survie
 
-24 petites applications Android hors ligne, sans publicité, sans pistage, sans compte. Une app par outil, interface sombre commune, textes en français.
+34 petites applications Android hors ligne, sans publicité, sans pistage, sans compte. Une app par outil, interface sombre commune, textes en français.
 
 ## Installer
 
@@ -40,6 +40,16 @@ Les APK sont recompilés automatiquement par GitHub Actions à chaque modificati
 | Vitesse GPS | Vitesse, trajet, altitude, coordonnées à copier pour les secours |
 | Batterie | Niveau, état, santé, température, courant |
 | Réseau | Type de connexion et test de débit (seule app qui utilise Internet) |
+| Pouls | Fréquence cardiaque par le doigt sur la caméra, mode manuel, historique (indicatif) |
+| Soleil et Lune | Lever, coucher, crépuscules, durée du jour, position du soleil, phases et lever de lune |
+| Altimètre | Altitude barométrique étalonnable, dénivelé, pression et tendance météo |
+| Morse | Émission par lampe, son, vibration ou écran, décodage manuel ou au micro, apprentissage |
+| Sifflet | Sifflet, SOS sonore, signal de détresse en montagne, sirène, fonctionne écran éteint |
+| Signaux | Numéros d'urgence, alphabet radio, signaux sol-air et corporels, procédures radio, alertes |
+| Accordeur | Accordeur chromatique et par instrument, diapason |
+| Stocks | Inventaire des réserves, dates de péremption, jours d'autonomie du foyer |
+| Carnet | Notes hors ligne avec horodatage et position GPS |
+| Check-lists | Listes cochables : kit d'urgence, sac d'évacuation, coupure de courant, voiture… |
 
 Chaque app ne demande que les permissions dont elle a besoin. Seule « Réseau » accède à Internet, uniquement pendant un test lancé par l'utilisateur.
 
