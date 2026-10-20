@@ -155,11 +155,11 @@ val RADIO_ENTRIES: List<Entry> = listOf(
             "Canaux espacés de 12,5 kHz ; appareil portatif à antenne intégrée, utilisé d'appareil à appareil.",
             "Aucun canal n'est réservé aux secours : rien ne garantit que quelqu'un vous écoute.",
         ),
-        source = "ECC / CEPT : bande PMR446 ; Rete Radio Montana (Italie)",
+        source = "ECC / CEPT : décision ECC/DEC/(15)05 (PMR446)",
         glyph = "446",
-        unofficial = "Non officiel : en Italie, le réseau Rete Radio Montana promeut le canal 8, sous-code 16, " +
-            "pour les informations de sécurité en montagne.",
-        keywords = "pmr talkie walkie 446 canal 8 sous code 16 ctcss montagne",
+        unofficial = "Non officiel : certains réseaux bénévoles, comme Rete Radio Montana en Italie, ont leur propre " +
+            "canal d'appel. Convenez à l'avance d'un canal et d'un sous-code (CTCSS) avec vos compagnons.",
+        keywords = "pmr talkie walkie 446 canal sous code ctcss montagne rete radio montana",
     ),
     Entry(
         id = "radio-cb",

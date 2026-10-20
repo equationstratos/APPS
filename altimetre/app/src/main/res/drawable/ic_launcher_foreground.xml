@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Altimètre : cadran d'altimètre au-dessus de deux sommets enneigés. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Cadran -->
+    <path
+        android:pathData="M29.57,45.11 A26,26 0 0,1 78.43,45.11"
+        android:strokeColor="#FF4A9FFF"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M31.92,41.25 L35.81,43.5 M41.25,31.92 L43.5,35.81 M54,28.5 L54,33 M76.08,41.25 L72.19,43.5"
+        android:strokeColor="#FF4A9FFF"
+        android:strokeWidth="2"
+        android:strokeLineCap="round" />
+    <!-- Aiguille du cadran -->
+    <path
+        android:pathData="M64.4,31.48 a2.6,2.6 0 1,0 5.2,0 a2.6,2.6 0 1,0 -5.2,0 Z"
+        android:fillColor="#FFFFFFFF" />
+
+    <!-- Sommet secondaire -->
+    <path
+        android:pathData="M55,72 L67,51 L77,72 Z"
+        android:fillAlpha="0.55"
+        android:fillColor="#FF4A9FFF" />
+    <!-- Sommet principal -->
+    <path
+        android:pathData="M31,72 L48,37 L65,72 Z"
+        android:fillColor="#FF4A9FFF" />
+    <!-- Neige -->
+    <path
+        android:pathData="M48,37 L52.86,47 L50.4,45.2 L48,48 L45.6,45.2 L43.14,47 Z"
+        android:fillColor="#FFFFFFFF" />
+</vector>

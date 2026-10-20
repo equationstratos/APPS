@@ -15,9 +15,6 @@ import androidx.lifecycle.LifecycleOwner
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
-/** Lens a measurement runs on. */
-internal enum class Lens { BACK, FRONT }
-
 /** Small frames are plenty to average a colour, and cheap to read 30 times per second. */
 private val ANALYSIS_SIZE = Size(320, 240)
 
@@ -26,15 +23,16 @@ private const val START_FAILED =
 private const val NO_CAMERA = "Aucune caméra utilisable sur cet appareil : utilisez le mode manuel."
 
 /**
- * One camera measurement: binds an [ImageAnalysis] use case to [lifecycleOwner], averages the
- * centre of each frame on a background thread, feeds a [PulseSession] and posts its snapshots to
- * the main thread. Create one per measurement; [stop] turns the torch off and releases the camera.
- * [start] and [stop] must be called on the main thread; the callbacks run on it.
+ * One camera measurement: binds an [ImageAnalysis] use case to [lifecycleOwner], turns the torch
+ * on when there is one, averages the centre of each frame on a background thread, feeds a
+ * [PulseSession] and posts its snapshots to the main thread. Create one per measurement; [stop]
+ * turns the torch off and releases the camera. [start] and [stop] must be called on the main
+ * thread; the callbacks run on it.
  */
 internal class PulseCamera(
     private val context: Context,
     private val lifecycleOwner: LifecycleOwner,
-    private val onStarted: (Camera, Lens) -> Unit,
+    private val onStarted: (lens: Lens, torch: Boolean) -> Unit,
     private val onSnapshot: (SessionSnapshot) -> Unit,
     private val onError: (String) -> Unit,
 ) {
@@ -59,6 +57,7 @@ internal class PulseCamera(
                 try {
                     bind(future.get())
                 } catch (e: Exception) {
+                    release()
                     fail(START_FAILED)
                 }
             }
@@ -67,20 +66,31 @@ internal class PulseCamera(
 
     fun stop() {
         active = false
+        release()
+        analysisExecutor.shutdown()
+    }
+
+    /** Torch off, analyzer removed and use case unbound; safe to call several times. */
+    private fun release() {
         val cam = camera
-        if (cam != null && cam.cameraInfo.hasFlashUnit()) cam.cameraControl.enableTorch(false)
+        if (cam != null) {
+            try {
+                if (cam.cameraInfo.hasFlashUnit()) cam.cameraControl.enableTorch(false)
+            } catch (e: RuntimeException) {
+                // The camera is already closed: its torch is off.
+            }
+        }
         val useCase = analysis
         if (useCase != null) {
             useCase.clearAnalyzer()
             try {
                 provider?.unbind(useCase)
-            } catch (e: IllegalStateException) {
+            } catch (e: RuntimeException) {
                 // Already released with the lifecycle.
             }
         }
         analysis = null
         camera = null
-        analysisExecutor.shutdown()
     }
 
     private fun bind(cameraProvider: ProcessCameraProvider) {
@@ -107,10 +117,12 @@ internal class PulseCamera(
             .build()
         useCase.setAnalyzer(analysisExecutor) { image -> analyze(image) }
         cameraProvider.unbindAll()
-        val bound = cameraProvider.bindToLifecycle(lifecycleOwner, selector, useCase)
         analysis = useCase
+        val bound = cameraProvider.bindToLifecycle(lifecycleOwner, selector, useCase)
         camera = bound
-        onStarted(bound, lens)
+        val torch = bound.cameraInfo.hasFlashUnit()
+        if (torch) bound.cameraControl.enableTorch(true)
+        onStarted(lens, torch)
     }
 
     private fun fail(message: String) {

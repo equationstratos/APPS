@@ -78,6 +78,22 @@ internal fun List<HistoryEntry>.withContext(timeMs: Long, context: MeasureContex
 
 internal fun List<HistoryEntry>.without(timeMs: Long): List<HistoryEntry> = filterNot { it.timeMs == timeMs }
 
+/** "1 mesure enregistrée", "12 mesures enregistrées". */
+internal fun historyCountText(count: Int): String =
+    if (count > 1) "$count${NBSP}mesures enregistrées" else "$count${NBSP}mesure enregistrée"
+
+/** Confirmation text before clearing the whole history. */
+internal fun clearHistoryText(count: Int): String =
+    if (count > 1) {
+        "Les $count${NBSP}mesures enregistrées seront supprimées définitivement."
+    } else {
+        "La mesure enregistrée sera supprimée définitivement."
+    }
+
+/** Second line of a history entry: "Caméra · Au repos", or the method alone without context. */
+internal fun entryDetails(entry: HistoryEntry): String =
+    if (entry.context == MeasureContext.NONE) entry.method.label else "${entry.method.label} · ${entry.context.label}"
+
 private val DateFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.FRANCE)
 private val TimeFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.FRANCE)
 

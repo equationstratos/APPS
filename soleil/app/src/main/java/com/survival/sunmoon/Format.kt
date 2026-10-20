@@ -274,7 +274,7 @@ internal fun parseCoordinate(text: String, isLatitude: Boolean): CoordinateInput
     val example = if (isLatitude) "48,8566" else "2,3522"
     if (!DECIMAL_PATTERN.matches(s)) {
         return CoordinateInput.Invalid(
-            "${name.replaceFirstChar { it.uppercaseChar() }} invalide : saisissez des degrés décimaux, par exemple $example."
+            "${name.replaceFirstChar { it.uppercaseChar() }} invalide$NBSP: saisissez des degrés décimaux, par exemple $example."
         )
     }
     if (hemisphereSign != 0 && (s.startsWith("-") || s.startsWith("+"))) {

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Clipboard with two checked rows and one empty box, inside the 30 dp safe circle. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Board outline -->
+    <path
+        android:pathData="M42,35 L66,35 A4,4 0 0 1 70,39 L70,73 A4,4 0 0 1 66,77 L42,77 A4,4 0 0 1 38,73 L38,39 A4,4 0 0 1 42,35 Z"
+        android:strokeColor="#4A9FFF"
+        android:strokeWidth="3"
+        android:strokeLineJoin="round" />
+
+    <!-- Clip -->
+    <path
+        android:pathData="M49,31 L59,31 A3,3 0 0 1 62,34 L62,40 L46,40 L46,34 A3,3 0 0 1 49,31 Z"
+        android:fillColor="#4A9FFF" />
+
+    <!-- Row 1: checked -->
+    <path
+        android:pathData="M42.5,48 L45.5,51 L50.5,45.5"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <path
+        android:pathData="M55,48 L65,48"
+        android:strokeColor="#4A9FFF"
+        android:strokeWidth="3"
+        android:strokeLineCap="round" />
+
+    <!-- Row 2: checked -->
+    <path
+        android:pathData="M42.5,58 L45.5,61 L50.5,55.5"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <path
+        android:pathData="M55,58 L65,58"
+        android:strokeColor="#4A9FFF"
+        android:strokeWidth="3"
+        android:strokeLineCap="round" />
+
+    <!-- Row 3: still to do -->
+    <path
+        android:pathData="M43.5,65.5 L49.5,65.5 L49.5,71.5 L43.5,71.5 Z"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2"
+        android:strokeLineJoin="round" />
+    <path
+        android:pathData="M55,68.5 L62,68.5"
+        android:strokeColor="#4A9FFF"
+        android:strokeWidth="3"
+        android:strokeLineCap="round" />
+</vector>

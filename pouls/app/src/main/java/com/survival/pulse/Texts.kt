@@ -4,9 +4,9 @@ import kotlin.math.ceil
 import kotlin.math.roundToInt
 
 /** Non-breaking space: keeps a number with its unit and French quotes with their word. */
-internal const val NBSP = ' '
+internal const val NBSP = '\u00A0'
 
-/** Usual resting range for an adult (Mayo Clinic, MedlinePlus, CHUV): 60 to 100 beats per minute. */
+/** Usual resting range for an adult (Mayo Clinic, American Heart Association): 60 to 100 beats per minute. */
 internal const val REST_MIN_BPM = 60
 internal const val REST_MAX_BPM = 100
 

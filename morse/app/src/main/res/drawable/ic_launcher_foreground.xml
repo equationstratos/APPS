@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SOS in Morse (dots, dashes, dots) inside a ring, kept within the 30-unit safe circle. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:strokeColor="#4A9FFF"
+        android:strokeAlpha="0.55"
+        android:strokeWidth="3"
+        android:pathData="M27,54a27,27 0 1,0 54,0a27,27 0 1,0 -54,0Z" />
+    <path
+        android:fillColor="#4A9FFF"
+        android:pathData="M35.25,42a3.25,3.25 0 1,0 6.5,0a3.25,3.25 0 1,0 -6.5,0Z M50.75,42a3.25,3.25 0 1,0 6.5,0a3.25,3.25 0 1,0 -6.5,0Z M66.25,42a3.25,3.25 0 1,0 6.5,0a3.25,3.25 0 1,0 -6.5,0Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M35.75,51.25h5.5a2.75,2.75 0 0,1 0,5.5h-5.5a2.75,2.75 0 0,1 0,-5.5Z M51.25,51.25h5.5a2.75,2.75 0 0,1 0,5.5h-5.5a2.75,2.75 0 0,1 0,-5.5Z M66.75,51.25h5.5a2.75,2.75 0 0,1 0,5.5h-5.5a2.75,2.75 0 0,1 0,-5.5Z" />
+    <path
+        android:fillColor="#4A9FFF"
+        android:pathData="M35.25,66a3.25,3.25 0 1,0 6.5,0a3.25,3.25 0 1,0 -6.5,0Z M50.75,66a3.25,3.25 0 1,0 6.5,0a3.25,3.25 0 1,0 -6.5,0Z M66.25,66a3.25,3.25 0 1,0 6.5,0a3.25,3.25 0 1,0 -6.5,0Z" />
+</vector>

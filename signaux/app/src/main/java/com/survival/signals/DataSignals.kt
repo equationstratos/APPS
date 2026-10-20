@@ -2,14 +2,15 @@ package com.survival.signals
 
 /*
  * Visual, sound and body signals. Official sources: ICAO Annex 12 (ground-air code for survivors),
- * COLREG / RIPAM Annex IV (distress signals at sea), Sapeurs-pompiers de France (helicopter gestures),
+ * COLREG / RIPAM Annex IV (distress signals at sea), FFME and Sapeurs-pompiers de France (helicopter gestures),
  * Swiss Alpine Club (alpine distress signal). Common practices are flagged as unofficial.
  */
 
 private const val SRC_ANNEX_12 = "OACI, Annexe 12 (recherches et sauvetage), appendice : " +
     "code de signaux visuels sol-air à l'usage des survivants"
 private const val SRC_RIPAM = "RIPAM (COLREG), règle 37 et annexe IV : signaux de détresse"
-private const val SRC_POMPIERS = "Sapeurs-pompiers de France (pompiers.fr) : risques en montagne"
+private const val SRC_GESTURES = "Fédération française de la montagne et de l'escalade (FFME) : fiche « Alerter » ; " +
+    "Sapeurs-pompiers de France : dossier montagne"
 private const val SRC_ALPINE = "Club alpin suisse (CAS) : signal de détresse alpin"
 
 private const val SIZE_RULE = "Au moins 2,5 m de long, aussi visible que possible."
@@ -124,7 +125,11 @@ val GESTURE_ENTRIES: List<Entry> = listOf(
         group = G_AIRCRAFT,
         title = "Oui : j'ai besoin de secours",
         summary = "Les deux bras levés en Y (comme « Yes »).",
-        source = SRC_POMPIERS,
+        details = listOf(
+            "Restez immobile, les bras bien levés au-dessus de la tête : évitez de les agiter.",
+            "Un vêtement de couleur vive ou une lumière vous rend plus facile à repérer.",
+        ),
+        source = SRC_GESTURES,
         figure = Figure.BODY_YES,
         keywords = "y yes oui bras leves helicoptere aide",
     ),
@@ -134,7 +139,7 @@ val GESTURE_ENTRIES: List<Entry> = listOf(
         group = G_AIRCRAFT,
         title = "Non : je n'ai pas besoin de secours",
         summary = "Un bras levé, l'autre baissé, en diagonale : un N (comme « No »).",
-        source = SRC_POMPIERS,
+        source = SRC_GESTURES,
         figure = Figure.BODY_NO,
         keywords = "n no non bras diagonale helicoptere",
     ),

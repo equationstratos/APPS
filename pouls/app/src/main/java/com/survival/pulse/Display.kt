@@ -5,6 +5,9 @@ import kotlin.math.roundToInt
 /** Placeholder for a value not available yet. */
 internal const val NO_VALUE = "—"
 
+/** Lens a measurement runs on. */
+internal enum class Lens { BACK, FRONT }
+
 /** Indicator line: short text and its tone. */
 internal class Indicator(val text: String, val tone: Tone)
 
@@ -20,6 +23,23 @@ internal class Readout(
     val description: String,
 )
 
+/**
+ * Hint about the lighting when the usual set-up (back lens + flash) is not available, or null.
+ * [torch] is null while the camera is not started yet.
+ */
+internal fun lightNote(lens: Lens?, torch: Boolean?): String? = when {
+    lens == Lens.FRONT ->
+        "Pas de caméra arrière utilisable : posez le doigt sur la caméra avant, face à une lumière vive."
+    torch == false ->
+        "Pas de flash sur cet appareil : placez le doigt entre l'objectif et une lumière vive (lampe, fenêtre) " +
+            "pour l'éclairer par transparence."
+    else -> null
+}
+
+/**
+ * Camera readout. [notice] (error, interruption) replaces the instruction while idle; [light]
+ * (see [lightNote]) is shown during the measurement.
+ */
 internal fun cameraReadout(
     running: Boolean,
     snapshot: SessionSnapshot?,
@@ -27,6 +47,8 @@ internal fun cameraReadout(
     resultQuality: Double?,
     failed: Boolean,
     context: MeasureContext,
+    notice: String? = null,
+    light: String? = null,
 ): Readout = when {
     running && snapshot == null -> Readout(
         value = NO_VALUE,
@@ -34,7 +56,7 @@ internal fun cameraReadout(
         tone = Tone.ACCENT,
         status = "Démarrage de la caméra…",
         detail = null,
-        note = null,
+        note = light,
         description = "Démarrage de la mesure",
     )
     running && snapshot != null -> {
@@ -46,7 +68,7 @@ internal fun cameraReadout(
             tone = Tone.ACCENT,
             status = cameraMessage(snapshot),
             detail = if (measuring) formatElapsed(snapshot.elapsedS, MEASURE_DURATION_S) else null,
-            note = null,
+            note = light,
             description = if (live != null) {
                 "Estimation en cours : $live battements par minute"
             } else {
@@ -75,8 +97,8 @@ internal fun cameraReadout(
     else -> Readout(
         value = NO_VALUE,
         progress = 0f,
-        tone = Tone.NEUTRAL,
-        status = FINGER_INSTRUCTION,
+        tone = if (notice != null) Tone.WARNING else Tone.NEUTRAL,
+        status = notice ?: FINGER_INSTRUCTION,
         detail = "Appuyez sur ${quoted("Démarrer")} : la mesure dure ${MEASURE_DURATION_S.toInt()}${NBSP}secondes.",
         note = null,
         description = "Aucune mesure en cours",

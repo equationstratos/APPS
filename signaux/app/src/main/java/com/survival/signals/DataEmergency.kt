@@ -106,7 +106,7 @@ val EMERGENCY_ENTRIES: List<Entry> = listOf(
         details = listOf(
             "Gratuit, 24 h/24 et 7 j/7.",
             "Surtout utile depuis la terre, pour signaler une personne ou un bateau en difficulté en mer.",
-            "Sur la plage ou dans la zone de baignade, faites plutôt le 112.",
+            "Pour une urgence sur la plage ou les rochers, faites plutôt le 15, le 18 ou le 112.",
         ),
         source = "Ministère de la Mer : « Comment alerter les secours en mer ? » ; SNSM",
         dial = "196",
